@@ -1,0 +1,52 @@
+# Secrets and local environment settings
+.env
+.env.*
+!.env.example
+
+# Python environments and bytecode
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Model downloads and tool caches
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Local datasets and databases
+datasets/
+databases/
+
+# Uploaded photos and database files
+/app/uploads/
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+
+# Local inspiration photos; documentation images remain available to Git
+/*.jpg
+/*.jpeg
+/*.webp
+
+# Python build and coverage output
+/build/
+/dist/
+*.egg-info/
+.coverage
+.coverage.*
+/htmlcov/
+coverage.xml
+
+# Local editor settings, logs, and operating system files
+.vscode/
+.idea/
+*.log
+.DS_Store
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,100 @@
+text_embedding_model: voyageai/voyage-4-nano
+image_embedding_model: google/siglip2-base-patch16-224
+cache_folder: .cache
+embedding_device: auto
+models_local_files_only: true
+text_vector_size: 2048
+image_vector_size: 768
+image_normalize: true
+
+qdrant_path: databases/vector_db/qdrant
+qdrant_images_path: databases/vector_db/qdrant_images
+qdrant_url: http://127.0.0.1:6333
+qdrant_timeout_seconds: 30.0
+qdrant_local_max_storage_mb: 512
+query_embedding_cache_size: 32
+sqlite_path: databases/sqlite_db/scraped_data.sqlite3
+wikivoyage_collection: wikivoyage_voyage
+scraped_images_collection: scraped_images
+
+wikivoyage_pages_dump: datasets/raw/wikivoyage/enwikivoyage-latest-page.sql
+wikivoyage_geo_dump: datasets/raw/wikivoyage/enwikivoyage-latest-geo_tags.sql
+wikivoyage_articles_dump: datasets/raw/wikivoyage/enwikivoyage-latest-pages-articles.xml
+wikivoyage_pages_path: datasets/processed/wikivoyage/pages.jsonl
+wikivoyage_geo_tags_path: datasets/processed/wikivoyage/geo_tags.jsonl
+wikivoyage_articles_path: datasets/processed/wikivoyage/articles.jsonl
+wikivoyage_chunks_path: datasets/processed/wikivoyage/chunks.jsonl
+removed_chunk_ids_path: datasets/processed/wikivoyage/removed_chunk_ids.json
+token_audit_directory: datasets/processed/wikivoyage/token_audit
+coordinate_cleanup_directory: datasets/processed/wikivoyage/coordinate_cleanup
+scraped_places_path: datasets/raw/scraped_data/places.compact.jsonl
+scraped_photos_directory: datasets/raw/scraped_data/photos
+image_manifest_path: datasets/processed/scraped/image_manifest.jsonl
+destination_mappings_path: null
+location_mappings_path: datasets/processed/location_mappings.json
+image_search_score_threshold: null
+
+chunk_size: 450
+chunk_overlap: 60
+chunk_min_tokens: 40
+text_embedding_batch_size: 32
+wikivoyage_index_batch_size: 32
+image_index_batch_size: 32
+metadata_index_batch_size: 500
+
+search_limit: 5
+retrieval_limit: 10
+retrieval_group_size: 3
+candidate_min_limit: 20
+candidate_multiplier: 4
+destination_max_distance_km: 30.0
+rrf_k: 60
+text_weight: 1.0
+image_weight: 1.0
+
+jev_api_url: https://api.typesafe.ai/v1/systemone
+jev_model: jev-latest
+jev_timeout_seconds: 15.0
+
+openai_model: gpt-5-nano
+openai_reasoning_effort: low
+generation_timeout_seconds: 45.0
+generation_max_tokens: 4000
+generation_context_results: 5
+generation_context_hits: 3
+generation_excerpt_chars: 1800
+generation_history_messages: 12
+generation_history_chars: 2000
+generation_image_max_edge: 1280
+
+chat_memory_path: databases/vector_db/chat_memory
+chat_memory_collection: chat_memory
+chat_memory_vector: text
+chat_max_conversations: 32
+chat_summary_chars: 1500
+chat_memory_limit: 20
+chat_memory_fact_chars: 500
+  
+app_max_upload_mb: 8
+app_image_max_edge: 1280
+app_max_conversations: 32
+app_user_id: local
+app_uploads_path: app/uploads
+app_message_max_chars: 4000
+app_map_tile_url: https://tile.openstreetmap.org/{z}/{x}/{y}.png
+app_map_attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+app_map_center: [16.0, 106.0]
+app_map_zoom: 5
+
+
+sparse_embedding_model: Qdrant/bm25
+sparse_embedding_batch_size: 256
+wikivoyage_sparse_index_batch_size: 256
+sparse_models_local_files_only: false
+
+bm25_k: 1.2
+bm25_b: 0.75
+bm25_avg_len: 256.0
+bm25_language: english
+
+wikivoyage_sparse_vector: bm25

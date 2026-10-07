@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>VISTRA · Chat</title>
+  <link rel="stylesheet" href="/static/vendor/leaflet.css">
+  <link rel="stylesheet" href="/static/style.css">
+  <script defer src="/static/vendor/marked.js"></script>
+  <script defer src="/static/vendor/purify.js"></script>
+  <script defer src="/static/vendor/leaflet.js"></script>
+  <script defer src="/static/map.js"></script>
+  <script defer src="/static/app.js"></script>
+</head>
+<body>
+  <svg class="icons" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-new" viewBox="0 0 24 24"><path d="M12 5H5v14h14v-7M14 4l6 6M10 14l2-6 6-6 4 4-6 6-6 2Z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5m-6 6 6-6 6 6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-memory" viewBox="0 0 24 24"><path d="M6 4h12v16H6zM9 8h6M9 12h6M9 16h3"/></symbol>
+    <symbol id="i-delete" viewBox="0 0 24 24"><path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></symbol>
+  </svg>
+  <button id="sidebar-backdrop" class="backdrop" aria-label="Close sidebar" hidden></button>
+  <aside id="sidebar" class="sidebar" aria-label="Chat navigation">
+    <a class="brand" href="/">VISTRA</a>
+    <button id="new-chat" class="nav-button"><svg><use href="#i-new"/></svg>New chat</button>
+    <p class="sidebar-label">Your chats</p>
+    <nav id="chat-list" aria-label="Saved conversations"><p class="muted sidebar-empty">Loading chats…</p></nav>
+    <button id="memory-button" class="nav-button memory-button"><svg><use href="#i-memory"/></svg>Saved preferences</button>
+    <div class="profile"><span class="profile-avatar">V</span><div>Travel assistant<span>Your places. Your preferences.</span></div></div>
+  </aside>
+  <main>
+    <header class="topbar">
+      <div class="header-left"><button id="toggle-sidebar" class="icon-button" aria-label="Toggle sidebar" aria-expanded="false"><svg><use href="#i-menu"/></svg></button><span class="app-title">VISTRA</span><span id="model" class="model"></span></div>
+      <button id="toggle-map" class="map-toggle" aria-controls="map-panel" aria-expanded="false">Show map</button>
+    </header>
+    <div class="workspace">
+    <div class="chat-pane">
+    <section id="feed" class="feed" aria-label="Conversation" tabindex="0">
+      <div class="welcome" id="welcome">
+        <h1>Where would you like to go?</h1>
+        <p>Ask about a destination, or share a photo.</p>
+        <div class="suggestions">
+          <button data-query="Which museums should I visit in Hanoi?">Museums in Hanoi<span>Find somewhere to explore</span></button>
+          <button data-query="Find quiet places with mountains and beaches in Vietnam.">Mountains and beaches<span>Discover your kind of scenery</span></button>
+          <button data-query="Remember that I prefer quiet places and museums.">Remember my preferences<span>Make future suggestions personal</span></button>
+        </div>
+      </div>
+      <div id="messages" class="messages"></div>
+    </section>
+    <div class="composer-area">
+      <div id="notice" class="notice" role="alert" hidden></div>
+      <form id="composer" class="composer">
+        <div id="attachment" class="attachment" hidden><img id="preview" alt="Attached inspiration photo"><span id="filename"></span><button type="button" id="remove-image" class="icon-button" aria-label="Remove image"><svg><use href="#i-close"/></svg></button></div>
+        <label for="message" class="sr-only">Your message</label>
+        <textarea id="message" rows="1" maxlength="4000" placeholder="Message VISTRA"></textarea>
+        <div class="composer-actions">
+          <button type="button" id="add-image" class="icon-button" aria-label="Attach an image" title="Attach an image"><svg><use href="#i-plus"/></svg></button>
+          <input id="image" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          <span id="composer-hint" class="composer-hint">Enter to send · Shift + Enter for a new line</span>
+          <button id="send" class="send-button" type="submit" aria-label="Send message" disabled><svg><use href="#i-up"/></svg></button>
+        </div>
+      </form>
+      <p class="footer-note">VISTRA can make mistakes. Check important travel information.</p>
+    </div>
+    </div>
+    <aside id="map-panel" class="map-panel" aria-label="Retrieved places on the map">
+      <header class="map-header"><div><strong>Places</strong><span id="place-count">Search to discover places</span></div><button id="fit-places" class="map-fit" disabled>Show all</button></header>
+      <div class="map-stage">
+        <div id="places-map" aria-label="Map of retrieved place coordinates"></div>
+        <nav id="map-results" class="map-results" aria-label="Choose a retrieved place"></nav>
+        <p id="map-empty" class="map-empty">Ask about a destination or upload a photo to see places here.</p>
+        <article id="place-detail" class="place-detail" aria-label="Selected place details" hidden></article>
+        <p id="map-network-status" class="map-network-status" role="status" hidden>Map tiles could not load. Place details are still available.</p>
+      </div>
+    </aside>
+    </div>
+  </main>
+  <dialog id="memory-dialog" aria-labelledby="memory-title">
+    <div class="dialog-header"><h2 id="memory-title">Saved preferences</h2><button id="close-memory" class="icon-button" aria-label="Close preferences"><svg><use href="#i-close"/></svg></button></div>
+    <p class="muted">Preferences carry over when you start a new chat.</p>
+    <dl id="memory-list"></dl>
+  </dialog>
+  <dialog id="delete-dialog" aria-labelledby="delete-title" aria-describedby="delete-description">
+    <h2 id="delete-title">Delete chat?</h2>
+    <p id="delete-chat-title"></p>
+    <p id="delete-description" class="muted">This permanently removes the chat history. Your saved preferences stay.</p>
+    <div class="dialog-actions">
+      <button id="cancel-delete" class="dialog-button" autofocus>Cancel</button>
+      <button id="confirm-delete" class="dialog-button delete-button">Delete</button>
+    </div>
+  </dialog>
+  <noscript>Enable JavaScript to use the chat.</noscript>
+</body>
+</html>

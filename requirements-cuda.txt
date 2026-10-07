@@ -1,0 +1,4 @@
+# CUDA-enabled PyTorch for the existing Windows Python 3.14 environment.
+# Keep this separate from the application's general dependencies.
+--index-url https://download.pytorch.org/whl/cu130
+torch==2.14.0+cu130
