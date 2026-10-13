@@ -1,10 +1,26 @@
 # VISTRA
 
-Travel Q&A and multi-turn itinerary planning with PostgreSQL memory, Qdrant retrieval, a TravelPlanner-style orchestrator, and Open-Meteo weather.
+**Your travel companion, with memory.**
 
-## Run
+VISTRA is an AI travel assistant for grounded Q&A and multi-turn itinerary planning. It remembers your preferences, retrieves travel guides and place photos, and brings weather into plans you can refine through conversation.
 
-From the project root, using the existing virtual environment and `.env`:
+## A look inside
+
+![VISTRA chat with Hanoi place photos, ratings, addresses, and Maps links](assets/readme/vistra-ui.png)
+
+Chat naturally, explore photos and place details beneath each reply, and revisit your saved conversations.
+
+## From question to trip
+
+![VISTRA pipeline: from user query through memory, retrieval, and itinerary planning to final output](assets/readme/vistra-pipeline.png)
+
+PostgreSQL holds short- and long-term memory; Qdrant retrieves travel evidence. Itineraries follow a TravelPlanner-style tools → notebook → planner flow, with constraint checks and bounded repair before delivery.
+
+## Get started
+
+Use the existing `.env`, model cache, and indexed datasets. New installations need provider keys and PostgreSQL settings; see the [setup guide](api/README.md).
+
+Run from the project root on Windows; create `.venv` with `python -m venv .venv` if needed:
 
 ```powershell
 .\.venv\python.exe -m pip install -r requirements.txt
@@ -12,50 +28,8 @@ docker compose -f compose.postgres.yaml -f compose.qdrant.yaml up -d
 .\.venv\python.exe -B -m frontend.server
 ```
 
-Open [the chat demo](http://127.0.0.1:8000). For terminal chat and the complete backend JSON, run `main.py --chat` and type `/last`. New installations need provider credentials, PostgreSQL settings, prepared embedding models, and indexed datasets; starting databases does not populate their data.
+Open **[VISTRA chat](http://127.0.0.1:8000)**. Try “Plan three relaxed days in Hanoi,” then “Make day two more relaxed; keep the other days unchanged.” Add your trip dates to request a forecast.
 
-## Developer API
+**Terminal:** run `main.py --chat`; type `/last` to inspect the full backend JSON.
 
-The code, tests, Dockerfile, Compose setup, and developer instructions live together in [api/](api/README.md).
-
-```powershell
-docker compose --env-file .env -f api/compose.yaml up -d --build
-```
-
-The API is available on port 8067, with [Swagger documentation](http://127.0.0.1:8067/docs). Send `X-API-Key` to `POST /v1/chat`; reuse `user_id` and `session_id` for follow-ups.
-
-## Dependencies and structure
-
-`requirements.txt` is the single shared runtime manifest for the pipeline, frontend, and API. Offline-only Wikivoyage parsing and browser-assisted photo indexing packages are optional; their installation commands are in [the API guide](api/README.md#optional-data-rebuilding).
-
-```text
-main.py                 One-shot pipeline and interactive chat
-requirements.txt        Shared runtime dependencies
-config.yaml             Models, data, retrieval and planning settings
-src/                    Pipeline, memory, retrieval, planning and data preparation
-frontend/               Browser server, static assets and frontend tests
-api/                    Developer API, Docker deployment, guide and API tests
-compose.postgres.yaml   Shared PostgreSQL service and persistent volume
-compose.qdrant.yaml     Shared Qdrant service and persistent volume
-```
-
-Local state lives in `.env`, `.venv/`, `.cache/`, `datasets/`, `frontend/.runtime/`, and database volumes. Docker mounts models and datasets read-only; it does not copy them into the image. The API retains lazy embedding models across requests, while database clients remain request-scoped.
-
-The existing Windows environment uses CUDA PyTorch. The Docker API uses CPU PyTorch; both satisfy the same root requirement. When recreating the current Windows CUDA environment, select its wheel before installing the shared requirements:
-
-```powershell
-.\.venv\python.exe -m pip install torch==2.14.0+cu130 --index-url https://download.pytorch.org/whl/cu130
-.\.venv\python.exe -m pip install -r requirements.txt
-```
-
-## Verify
-
-With PostgreSQL running:
-
-```powershell
-$env:VISTRA_TEST_POSTGRES='1'
-.\.venv\python.exe -B -m unittest discover -s api/tests -q
-.\.venv\python.exe -B -m unittest discover -s frontend/tests -q
-node --check frontend/static/app.js
-docker compose --env-file .env -f api/compose.yaml config --quiet
-```
+**Developer API:** follow the [API & Docker guide](api/README.md) to call `POST /v1/chat` with `X-API-Key`. See the [frontend guide](frontend/README.md) for chat and memory controls.
