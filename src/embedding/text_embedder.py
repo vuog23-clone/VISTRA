@@ -3,6 +3,8 @@ import numpy as np
 import torch
 from sentence_transformers import SentenceTransformer
 from src.utils.utils import load_config, resolve_path
+from src.utils.retrieval_activity import tracked_tool
+from src.security.guardrails import validate_text
 
 
 class TextEmbedder:
@@ -28,9 +30,12 @@ class TextEmbedder:
             local_files_only=self.config["models_local_files_only"],
         )
 
+    @tracked_tool("Local text embedding model", "Encode search query")
     def embed_query(self, query: str) -> np.ndarray:
+        query = validate_text(query, check_intent=True)
         return self.model.encode_query(query)
 
+    @tracked_tool("Local text embedding model", "Encode text records")
     def embed_documents(
         self,
         documents: list[str],

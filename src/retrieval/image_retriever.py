@@ -7,6 +7,9 @@ from src.embedding.image_embedder import ImageEmbedder
 from src.schema.models import RetrievalResult
 from src.utils.utils import load_config, resolve_path
 from src.database.qdrant_connection import open_qdrant
+from src.utils.retrieval_activity import tracked_tool
+from src.security.guardrails import (validate_text, bounded_int, validate_threshold,
+    validate_ids, MAX_LIMIT, MAX_GROUP_SIZE)
 
 
 class ImageRetriever:
@@ -17,10 +20,20 @@ class ImageRetriever:
         collection_name: str | None = None,
     ):
         self.config = load_config()
-        self.qdrant_path = resolve_path(qdrant_path or self.config["qdrant_images_path"])
-        self.collection_name = collection_name or self.config["scraped_images_collection"]
+        self.qdrant_path = resolve_path(qdrant_path, self.config["qdrant_google_images_path"])
+        self.collection_name = collection_name or self.config["google_images_collection"]
         self.client = open_qdrant(self.qdrant_path, self.config, QdrantClient)
-        self.embedder = embedder if embedder is not None else ImageEmbedder()
+
+        try:
+            vectors = self.client.get_collection(self.collection_name).config.params.vectors
+            if (not isinstance(vectors, models.VectorParams)
+                    or vectors.size != self.config["image_vector_size"]
+                    or vectors.distance != models.Distance.COSINE):
+                raise ValueError("Google image collection must match the configured SigLIP dimensions and cosine distance.")
+            self.embedder = embedder if embedder is not None else ImageEmbedder()
+        except Exception:
+            self.client.close()
+            raise
 
     def search(
         self,
@@ -30,9 +43,11 @@ class ImageRetriever:
         *,
         place_ids: list[str] | None = None,
     ) -> list[RetrievalResult]:
- 
-        limit = limit if limit is not None else self.config["retrieval_limit"]
+
+        limit = limit if limit is not None else self.config["search_limit"]
         self._validate_query(query, limit)
+        validate_threshold(score_threshold)
+        validate_ids(place_ids, "place_ids")
         if place_ids == []:
             return []
         query_vector = self.embedder.embed_image(query)
@@ -48,8 +63,10 @@ class ImageRetriever:
     ) -> list[RetrievalResult]:
 
         self._validate_text(query)
-        limit = limit if limit is not None else self.config["retrieval_limit"]
+        limit = limit if limit is not None else self.config["search_limit"]
         self._validate_query(query, limit)
+        validate_threshold(score_threshold)
+        validate_ids(place_ids, "place_ids")
         if place_ids == []:
             return []
         vector = self.embedder.embed_text(query).squeeze(0)
@@ -57,13 +74,26 @@ class ImageRetriever:
 
     @staticmethod
     def _location_filter(place_ids: list[str] | None) -> models.Filter | None:
+        validate_ids(place_ids, "place_ids")
         if place_ids is None:
             return None
-        return models.Filter(must=[models.FieldCondition(
-            key="place_id", match=models.MatchAny(any=sorted(set(place_ids))),
+
+        return models.Filter(
+            must=[models.FieldCondition(
+                key="place_id",
+                match=models.MatchAny(any=sorted(set(place_ids))),
         )])
 
-    def _query_points(self, vector, limit, score_threshold, place_ids=None):
+
+    @tracked_tool("Qdrant", "Search image vectors")
+    def _query_points(
+        self,
+        vector,
+        limit,
+        score_threshold,
+        place_ids=None
+    ):
+        validate_threshold(score_threshold)
         response = self.client.query_points(
             collection_name=self.collection_name,
             query=vector.tolist(),
@@ -78,8 +108,7 @@ class ImageRetriever:
 
     @staticmethod
     def _validate_text(query: str) -> None:
-        if not isinstance(query, str) or not query.strip():
-            raise ValueError("query must be a nonblank visual description.")
+        validate_text(query, "visual query", check_intent=True)
 
     @staticmethod
     def _validate_query(query: str | Path | Image.Image, limit: int) -> None:
@@ -87,8 +116,7 @@ class ImageRetriever:
             raise TypeError("query must be an image path or a PIL image.")
         if isinstance(query, str) and not query.strip():
             raise ValueError("query image path cannot be blank.")
-        if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
-            raise ValueError("limit must be a positive integer.")
+        bounded_int(limit, "limit", MAX_LIMIT)
 
     def search_grouped(
         self,
@@ -103,6 +131,10 @@ class ImageRetriever:
         limit = limit if limit is not None else self.config["search_limit"]
         group_size = group_size if group_size is not None else self.config["retrieval_group_size"]
         self._validate_query(query, limit)
+        self._validate_query(query, group_size)
+        bounded_int(group_size, "group_size", MAX_GROUP_SIZE)
+        validate_threshold(score_threshold)
+        validate_ids(place_ids, "place_ids")
         if place_ids == []:
             return []
 
@@ -118,18 +150,33 @@ class ImageRetriever:
         *,
         place_ids: list[str] | None = None,
     ) -> list[list[RetrievalResult]]:
-        
+
         self._validate_text(query)
         limit = limit if limit is not None else self.config["search_limit"]
         group_size = group_size if group_size is not None else self.config["retrieval_group_size"]
         self._validate_query(query, limit)
+        self._validate_query(query, group_size)
+        bounded_int(group_size, "group_size", MAX_GROUP_SIZE)
+        validate_threshold(score_threshold)
+        validate_ids(place_ids, "place_ids")
+
         if place_ids == []:
             return []
 
         vector = self.embedder.embed_text(query).squeeze(0)
         return self._query_groups(vector, limit, group_size, score_threshold, place_ids)
 
-    def _query_groups(self, vector, limit, group_size, score_threshold, place_ids=None):
+    @tracked_tool("Qdrant", "Search grouped image vectors")
+    def _query_groups(
+        self,
+        vector,
+        limit,
+        group_size,
+        score_threshold,
+        place_ids=None
+    ):
+        validate_threshold(score_threshold)
+        bounded_int(group_size, "group_size", MAX_GROUP_SIZE)
         response = self.client.query_points_groups(
             collection_name=self.collection_name,
             query=vector.tolist(),
@@ -142,6 +189,7 @@ class ImageRetriever:
             with_vectors=False,
         )
         groups = [self._results_from_points(group.hits) for group in response.groups]
+
         return [group for group in groups if group]
 
     @staticmethod
@@ -152,12 +200,15 @@ class ImageRetriever:
             place_id = payload.get("place_id")
             if place_id is None:
                 continue
+
             results.append(RetrievalResult(
                 place_id=str(place_id),
+                point_id=str(point.id),
                 score=point.score,
                 source="image",
                 payload=payload,
             ))
+
         return results
 
     def close(self) -> None:

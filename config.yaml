@@ -1,22 +1,39 @@
-text_embedding_model: voyageai/voyage-4-nano
-image_embedding_model: google/siglip2-base-patch16-224
+# VISTRA configuration
+# Settings used by the current retrieval and RAG pipeline.
+# Relative paths resolve from the project root. Secrets and PostgreSQL credentials live in .env.
+
+# --- Model runtime and embeddings ---
+# Local models share the cache and device settings. Vector sizes must match existing Qdrant collections.
 cache_folder: .cache
 embedding_device: auto
 models_local_files_only: true
+sparse_models_local_files_only: false
+text_embedding_model: voyageai/voyage-4-nano
 text_vector_size: 2048
+image_embedding_model: google/siglip2-base-patch16-224
 image_vector_size: 768
 image_normalize: true
+sparse_embedding_model: Qdrant/bm25
 
-qdrant_path: databases/vector_db/qdrant
-qdrant_images_path: databases/vector_db/qdrant_images
+# --- Qdrant connection ---
+# A non-null URL uses the server; QDRANT_URL in the environment overrides it. Local paths are fallback storage.
 qdrant_url: http://127.0.0.1:6333
 qdrant_timeout_seconds: 30.0
-qdrant_local_max_storage_mb: 512
-query_embedding_cache_size: 32
-sqlite_path: databases/sqlite_db/scraped_data.sqlite3
-wikivoyage_collection: wikivoyage_voyage
-scraped_images_collection: scraped_images
+qdrant_path: databases/vector_db/qdrant
 
+# --- Google image dataset ---
+# One Qdrant point per photo. PostgreSQL connection credentials belong in .env, not this file.
+google_dataset_path: datasets/raw/google
+google_images_collection: google_maps_images
+qdrant_google_images_path: databases/vector_db/qdrant_google_maps_images
+google_location_aliases:
+  Hanoi: ["Ha Noi", "Hà Nội"]
+  Ho Chi Minh City: ["Ho Chi Minh", "Hồ Chí Minh", "Saigon", "Sai Gon"]
+
+# --- Wikivoyage dataset ---
+# Raw inputs support preprocessing; processed files enrich text results and resolve page scope.
+wikivoyage_collection: wikivoyage_voyage
+wikivoyage_sparse_vector: bm25
 wikivoyage_pages_dump: datasets/raw/wikivoyage/enwikivoyage-latest-page.sql
 wikivoyage_geo_dump: datasets/raw/wikivoyage/enwikivoyage-latest-geo_tags.sql
 wikivoyage_articles_dump: datasets/raw/wikivoyage/enwikivoyage-latest-pages-articles.xml
@@ -24,38 +41,57 @@ wikivoyage_pages_path: datasets/processed/wikivoyage/pages.jsonl
 wikivoyage_geo_tags_path: datasets/processed/wikivoyage/geo_tags.jsonl
 wikivoyage_articles_path: datasets/processed/wikivoyage/articles.jsonl
 wikivoyage_chunks_path: datasets/processed/wikivoyage/chunks.jsonl
-removed_chunk_ids_path: datasets/processed/wikivoyage/removed_chunk_ids.json
-token_audit_directory: datasets/processed/wikivoyage/token_audit
-coordinate_cleanup_directory: datasets/processed/wikivoyage/coordinate_cleanup
-scraped_places_path: datasets/raw/scraped_data/places.compact.jsonl
-scraped_photos_directory: datasets/raw/scraped_data/photos
-image_manifest_path: datasets/processed/scraped/image_manifest.jsonl
-destination_mappings_path: null
-location_mappings_path: datasets/processed/location_mappings.json
-image_search_score_threshold: null
 
+# --- Location scopes and reviewed mappings ---
+# Null mapping paths disable optional reviewed associations. Google scopes use their own aliases above.
+country_scopes_path: src/resolver/country_scopes.json
+location_aliases:
+  Hanoi: ["Hanoi, Vietnam"]
+  Phu Quoc: ["Phu Quoc, Vietnam"]
+location_mappings_path: null
+
+# --- Preprocessing and indexing ---
+# Chunk limits are in tokens; batch sizes control preparation/indexing work.
 chunk_size: 450
 chunk_overlap: 60
 chunk_min_tokens: 40
 text_embedding_batch_size: 32
+sparse_embedding_batch_size: 256
 wikivoyage_index_batch_size: 32
-image_index_batch_size: 32
+wikivoyage_sparse_index_batch_size: 256
 metadata_index_batch_size: 500
 
-search_limit: 5
-retrieval_limit: 10
+# --- Retrieval and ranking ---
+# Dense/BM25 fusion ranks text; hybrid searches both sources concurrently,
+# then ranks image places by distance to the retrieved destination document.
+# Maximum photo place cards; text searches use retrieval_limit.
+search_limit: 20
+# Total retained text chunks after dense/BM25 fusion, before page grouping.
+retrieval_limit: 20
+# Supporting photos per place; text defaults to its document budget per page.
 retrieval_group_size: 3
 candidate_min_limit: 20
 candidate_multiplier: 4
-destination_max_distance_km: 30.0
+# Null keeps relative visual matches without an uncalibrated cutoff.
+image_search_score_threshold: null
 rrf_k: 60
-text_weight: 1.0
-image_weight: 1.0
+query_embedding_cache_size: 32
+bm25_k: 1.2
+bm25_b: 0.75
+bm25_avg_len: 256.0
+bm25_language: english
 
+# --- Request routing ---
+# Jev first decides retrieval vs direct LLM, then recognizes the destination
+# and optionally selects the retrieval evidence route.
 jev_api_url: https://api.typesafe.ai/v1/systemone
 jev_model: jev-latest
 jev_timeout_seconds: 15.0
+jev_routing_enabled: true
+jev_response_routing_enabled: true
 
+# --- LLM generation and context ---
+# OPENAI_API_KEY and JEV_API_KEY belong in .env. Source-grounding instructions are defined in src/prompts/.
 openai_model: gpt-5-nano
 openai_reasoning_effort: low
 generation_timeout_seconds: 45.0
@@ -63,38 +99,28 @@ generation_max_tokens: 4000
 generation_context_results: 5
 generation_context_hits: 3
 generation_excerpt_chars: 1800
-generation_history_messages: 12
-generation_history_chars: 2000
-generation_image_max_edge: 1280
+# Attach sanitized retrieved photos to both generation and grounding review.
+generation_vision_enabled: true
+generation_max_images: 4
+generation_image_timeout_seconds: 8.0
 
-chat_memory_path: databases/vector_db/chat_memory
-chat_memory_collection: chat_memory
-chat_memory_vector: text
-chat_max_conversations: 32
-chat_summary_chars: 1500
-chat_memory_limit: 20
-chat_memory_fact_chars: 500
-  
-app_max_upload_mb: 8
-app_image_max_edge: 1280
-app_max_conversations: 32
-app_user_id: local
-app_uploads_path: app/uploads
-app_message_max_chars: 4000
-app_map_tile_url: https://tile.openstreetmap.org/{z}/{x}/{y}.png
-app_map_attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-app_map_center: [16.0, 106.0]
-app_map_zoom: 5
+# --- Multi-turn chat memory (enabled by --user-id plus --session-id) ---
+# PostgreSQL stores sessions/messages separately from durable user preferences/trips.
+memory_recent_messages: 8
+memory_message_chars: 2000
+memory_context_chars: 24000
+memory_preference_limit: 12
+memory_trip_limit: 3
 
+# --- Weather evidence for itineraries and weather questions ---
+# Open-Meteo demo endpoint; OPEN_METEO_API_KEY selects its commercial endpoint.
+weather_enabled: true
+weather_timeout_seconds: 8.0
 
-sparse_embedding_model: Qdrant/bm25
-sparse_embedding_batch_size: 256
-wikivoyage_sparse_index_batch_size: 256
-sparse_models_local_files_only: false
-
-bm25_k: 1.2
-bm25_b: 0.75
-bm25_avg_len: 256.0
-bm25_language: english
-
-wikivoyage_sparse_vector: bm25
+# --- TravelPlanner-style tool collection, notebook and structured itineraries ---
+planning_enabled: true
+planning_max_steps: 20
+planning_max_repairs: 1
+# vistra uses current indexed data; benchmark requires the separately installed CSVs.
+planning_data_mode: vistra
+planning_benchmark_path: datasets/benchmark/travelplanner

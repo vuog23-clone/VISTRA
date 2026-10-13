@@ -4,6 +4,8 @@ from huggingface_hub import try_to_load_from_cache
 from qdrant_client.models import SparseVector
 
 from src.utils.utils import load_config, resolve_path
+from src.utils.retrieval_activity import tracked_tool
+from src.security.guardrails import validate_text
 
 
 class SparseEmbedder:
@@ -41,8 +43,14 @@ class SparseEmbedder:
         )
 
 
-    def embed_query(self, query: str) -> SparseVector:
-        embedding = next(self.model.query_embed(query.strip()))
+    @tracked_tool("Local BM25 model", "Encode keyword query")
+    def embed_query(
+        self,
+        query: str
+    ) -> SparseVector:
+
+        query = validate_text(query, check_intent=True)
+        embedding = next(self.model.query_embed(query))
 
         return SparseVector(
             indices=embedding.indices.tolist(),

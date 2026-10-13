@@ -1,3 +1,5 @@
+"""Index canonical Wikivoyage chunks into the configured dense collection."""
+
 from pathlib import Path
 from tqdm import tqdm
 
@@ -71,3 +73,23 @@ class WikivoyageIndexer:
 
     def close(self) -> None:
         self.store.close()
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--input", type=Path, help="Override the configured chunk JSONL file.")
+    parser.add_argument("--batch-size", type=int)
+    args = parser.parse_args()
+    if args.batch_size is not None and args.batch_size < 1:
+        parser.error("--batch-size must be positive.")
+    indexer = WikivoyageIndexer(path=args.input, batch_size=args.batch_size)
+    try:
+        print(f"Indexed {indexer.index():,} Wikivoyage chunks.")
+    finally:
+        indexer.close()
+
+
+if __name__ == "__main__":
+    main()

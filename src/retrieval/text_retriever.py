@@ -8,6 +8,10 @@ from src.utils.utils import load_config, resolve_path
 from src.database.qdrant_connection import open_qdrant
 from src.embedding.text_embedder import TextEmbedder
 from src.embedding.sparse_embedder import SparseEmbedder
+from src.utils.retrieval_activity import tool_call
+from src.utils.progress import progress
+from src.security.guardrails import (validate_text, bounded_int, validate_threshold,
+    validate_ids, MAX_LIMIT, MAX_GROUP_SIZE, MAX_CANDIDATES)
 
 class TextRetriever:
 
@@ -35,6 +39,9 @@ class TextRetriever:
         score_threshold: float | None,
         page_ids: list[str] | None = None,
     ):
+        query = validate_text(query, check_intent=True)
+        validate_ids(page_ids, "page_ids")
+        validate_threshold(score_threshold)
         query_filter = None
         if page_ids is not None:
             if not page_ids:
@@ -44,32 +51,43 @@ class TextRetriever:
             numbers = [int(page_id) for page_id in ids if page_id.isdecimal()]
             if numbers:
                 conditions.append(models.FieldCondition(key="page_id", match=models.MatchAny(any=numbers)))
-            query_filter = models.Filter(should=conditions)
+            # Page membership is mandatory; the inner OR accommodates string
+            # and integer payload IDs. Both vector searches receive this filter.
+            query_filter = models.Filter(must=[models.Filter(should=conditions)])
         query = query.strip()
         candidate_limit = max(
             self.config["candidate_min_limit"],
             limit * self.config["candidate_multiplier"],
         )
+        bounded_int(candidate_limit, "candidate_limit", MAX_CANDIDATES)
+        scope_detail = f"Allowed page IDs: {', '.join(ids[:10])}" if page_ids is not None else "No destination constraint."
+        progress("text_scope", "Text scope applied before retrieval",
+            f"{scope_detail}\nDocument limit: {limit} chunks. Dense and BM25 queries receive the same location filter before ranking."
+            f"\nCandidate pool per query: {candidate_limit}.",
+            filter_stage="before_retrieval", document_limit=limit,
+            scoped=page_ids is not None, allowed_page_count=len(ids) if page_ids is not None else 0)
         dense_vector = self._embed_query(query)
         sparse_vector = self._embed_sparse_query(query)
 
-        dense = self.client.query_points(
-            collection_name=self.collection_name,
-            query=dense_vector.tolist(),
-            query_filter=query_filter,
-            limit=candidate_limit,
-            with_payload=True,
-            with_vectors=False,
-        )
-        sparse = self.client.query_points(
-            collection_name=self.collection_name,
-            query=sparse_vector,
-            using=self.sparse_vector_name,
-            query_filter=query_filter,
-            limit=candidate_limit,
-            with_payload=True,
-            with_vectors=False,
-        )
+        with tool_call("Qdrant", "Search Wikivoyage dense vectors"):
+            dense = self.client.query_points(
+                collection_name=self.collection_name,
+                query=dense_vector.tolist(),
+                query_filter=query_filter,
+                limit=candidate_limit,
+                with_payload=True,
+                with_vectors=False,
+            )
+        with tool_call("Qdrant", "Search Wikivoyage BM25 vectors"):
+            sparse = self.client.query_points(
+                collection_name=self.collection_name,
+                query=sparse_vector,
+                using=self.sparse_vector_name,
+                query_filter=query_filter,
+                limit=candidate_limit,
+                with_payload=True,
+                with_vectors=False,
+            )
 
         points, scores = {}, {}
         for hits in (dense.points, sparse.points):
@@ -89,11 +107,13 @@ class TextRetriever:
         query: str,
         limit: int | None = None,
         score_threshold: float | None = None,
+        *,
+        page_ids: list[str] | None = None,
     ) -> list[RetrievalResult]:
         """Return chunks ranked by dense + BM25 RRF; threshold uses fused scores."""
         limit = limit if limit is not None else self.config["retrieval_limit"]
         self._validate_query(query, limit)
-        points = self._search_hybrid(query, limit, score_threshold)
+        points = self._search_hybrid(query, limit, score_threshold, page_ids)
         return self._results_from_points(points)[:limit]
 
 
@@ -106,28 +126,38 @@ class TextRetriever:
         *,
         page_ids: list[str] | None = None,
     ) -> list[list[RetrievalResult]]:
-        """Group fused chunks by page, ordered by each page's best chunk."""
-        limit = limit if limit is not None else self.config["search_limit"]
-        group_size = group_size if group_size is not None else self.config["retrieval_group_size"]
+        """Retain at most limit chunks in total, then group them for page cards.
+
+        The limit is a document budget, not a page count multiplied by a group
+        size. By default, all retained documents may belong to one filtered page.
+        An explicit group_size can impose an additional per-page cap.
+        """
+        limit = limit if limit is not None else self.config["retrieval_limit"]
+        explicit_group_size = group_size is not None
+        group_size = group_size if explicit_group_size else limit
 
         self._validate_query(query, limit)
         self._validate_query(query, group_size)
-        points = self._search_hybrid(query, limit * group_size, score_threshold, page_ids)
+        bounded_int(group_size, "group_size", MAX_GROUP_SIZE if explicit_group_size else MAX_LIMIT)
+        points = self._search_hybrid(query, limit, score_threshold, page_ids)
 
         groups = {}
-        for result in self._results_from_points(points):
+        for result in self._results_from_points(points)[:limit]:
             group = groups.setdefault(result.place_id, [])
             if len(group) < group_size:
                 group.append(result)
 
-        return list(groups.values())[:limit]
+        output = list(groups.values())
+        document_count = sum(len(group) for group in output)
+        progress("text_documents", "Text document retrieval completed",
+            f"{document_count} chunks retained across {len(output)} pages; document limit: {limit}.",
+            document_count=document_count, page_count=len(output), document_limit=limit)
+        return output
 
     @staticmethod
     def _validate_query(query, limit):
-        if not isinstance(query, str) or not query.strip():
-            raise ValueError("query must be a nonblank string.")
-        if type(limit) is not int or limit < 1:
-            raise ValueError("limit must be a positive integer.")
+        validate_text(query, check_intent=True)
+        bounded_int(limit, "limit", MAX_LIMIT)
 
     @staticmethod
     def _results_from_points(points) -> list[RetrievalResult]:

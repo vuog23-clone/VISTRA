@@ -1,0 +1,15 @@
+{
+  "Vietnam": {
+    "country_code": "VN",
+    "aliases": ["Viet Nam", "Việt Nam", "VN"],
+    "source_url": "https://baochinhphu.vn/quoc-hoi-thong-qua-viec-sap-xep-don-vi-hanh-chinh-cap-tinh-ca-nuoc-co-34-tinh-thanh-102250612100156988.htm",
+    "province_labels": [
+      "Hà Nội", "Hải Phòng", "Huế", "Đà Nẵng", "Cần Thơ", "Hồ Chí Minh",
+      "Lai Châu", "Điện Biên", "Sơn La", "Lạng Sơn", "Cao Bằng", "Tuyên Quang",
+      "Lào Cai", "Thái Nguyên", "Phú Thọ", "Bắc Ninh", "Hưng Yên", "Ninh Bình",
+      "Quảng Ninh", "Thanh Hóa", "Nghệ An", "Hà Tĩnh", "Quảng Trị", "Quảng Ngãi",
+      "Gia Lai", "Khánh Hòa", "Lâm Đồng", "Đắk Lắk", "Đồng Nai", "Tây Ninh",
+      "Vĩnh Long", "Đồng Tháp", "Cà Mau", "An Giang"
+    ]
+  }
+}

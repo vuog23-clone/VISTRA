@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+frontend/.runtime/
 
 # Python environments and bytecode
 .venv/
@@ -19,9 +20,9 @@ __pycache__/
 # Local datasets and databases
 datasets/
 databases/
+outputs/
 
-# Uploaded photos and database files
-/app/uploads/
+# Local database files
 *.sqlite
 *.sqlite3
 *.sqlite-wal

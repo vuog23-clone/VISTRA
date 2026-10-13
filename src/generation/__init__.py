@@ -1,1 +1,1 @@
-from src.generation.openai_generation import OpenAIGeneration
+"""Optional direct RAG generation, without agents or workflows."""

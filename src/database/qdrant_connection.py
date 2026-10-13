@@ -1,10 +1,6 @@
 from pathlib import Path
 
 
-class LocalStorageTooLargeError(RuntimeError):
-    """A public error raised before embedded storage can exhaust memory."""
-
-
 def open_qdrant(
     path: Path,
     config: dict,

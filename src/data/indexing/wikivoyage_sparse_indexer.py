@@ -1,3 +1,5 @@
+"""Add BM25 vectors to existing Wikivoyage points without rebuilding dense vectors."""
+
 from pathlib import Path
 from qdrant_client import models
 from tqdm import tqdm
@@ -131,3 +133,23 @@ class WikivoyageSparseIndexer:
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         self.close()
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--batch-size", type=int)
+    parser.add_argument("--max-points", type=int, help="Limit the number of points updated.")
+    parser.add_argument("--overwrite", action="store_true", help="Recompute existing BM25 vectors.")
+    args = parser.parse_args()
+    for name in ("batch_size", "max_points"):
+        value = getattr(args, name)
+        if value is not None and value < 1:
+            parser.error(f"--{name.replace('_', '-')} must be positive.")
+    with WikivoyageSparseIndexer(batch_size=args.batch_size) as indexer:
+        print(f"Indexed {indexer.index(max_points=args.max_points, overwrite=args.overwrite):,} Wikivoyage BM25 vectors.")
+
+
+if __name__ == "__main__":
+    main()

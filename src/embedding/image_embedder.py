@@ -9,6 +9,8 @@ from PIL import Image
 import torch.nn.functional as F
 
 from src.utils.utils import load_rgb_image, load_config, resolve_path
+from src.utils.retrieval_activity import tracked_tool
+from src.security.guardrails import validate_text, bounded_int
 
 class ImageEmbedder:
     def __init__(
@@ -27,13 +29,14 @@ class ImageEmbedder:
         self.dtype = torch.float16 if self.device.type == "cuda" else torch.float32
         print(f"Device: {self.device}")
 
+        model_name = model_name or self.config["image_embedding_model"]
+
         self.processor = AutoProcessor.from_pretrained(
-            model_name or self.config["image_embedding_model"],
+            model_name,
             cache_dir=str(resolve_path(cache_dir or self.config["cache_folder"])),
             local_files_only=self.config["models_local_files_only"],
             )
 
-        model_name = model_name or self.config["image_embedding_model"]
         load_options = {
             "cache_dir": str(resolve_path(cache_dir or self.config["cache_folder"])),
             "local_files_only": self.config["models_local_files_only"],
@@ -88,6 +91,7 @@ class ImageEmbedder:
         return embeddings
 
 
+    @tracked_tool("Local image embedding model", "Encode inspiration image")
     @torch.inference_mode()
     def embed_image(
         self,
@@ -143,6 +147,7 @@ class ImageEmbedder:
         return embeddings.cpu()
 
 
+    @tracked_tool("Local image embedding model", "Encode scenery description")
     @torch.inference_mode()
     def embed_text(
         self,
@@ -151,6 +156,10 @@ class ImageEmbedder:
         
         if isinstance(text, str):
             text = [text]
+        if not isinstance(text, list):
+            raise ValueError("Visual descriptions must be strings or a bounded list of strings.")
+        bounded_int(len(text), "description count", 32)
+        text = [validate_text(value, "visual description", check_intent=True) for value in text]
         
         inputs = self.processor(
             text=text,
