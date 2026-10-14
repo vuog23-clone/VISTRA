@@ -102,10 +102,10 @@ class JevLocationExtractor:
                       for name in self.candidates(query)]
         choices = {f"place_{index}": name for index, name in enumerate(candidates)}
         criteria = {
-            "no_location": "No geographic destination: open destination discovery without a named country/region (recommend somewhere with beautiful beaches), unscoped image similarity (including 'Tìm nơi giống ảnh này'), generic beaches/photos, or places only as origins/exclusions/analogies/supplied text. Continue retrieval for discovery; a city is not required. Translation/grammar/creative writing belong here unless travel retrieval is ALSO requested.",
-            "ambiguous": "Uncertain namesakes, near me, an unresolved there/this place reference (including 'What attractions are there?'), or several separately requested geographic scopes that cannot be selected. A country-wide recommendation or request for help choosing a city is NOT ambiguous. Do not ask a discovery user to choose a city before retrieval.",
-            "unknown_destination": "A destination is requested but none of the catalog candidates identifies it. Do not choose a similar place.",
-            **{key: f"The user requests travel/search evidence for the proper geographic destination {name}. It is not a generic travel topic/common word, origin, excluded PLACE, analogy or writing/translation content. Ignoring an attached photo does not exclude a named destination." for key, name in choices.items()},
+            "no_location": "No requested scope: open discovery, unscoped image similarity, generic topics, or names only as origins/exclusions/analogies/supplied text. Discovery needs no chosen city.",
+            "ambiguous": "Uncertain namesakes, unresolved near me/there, or separate compared/requested scopes. A named country/region for discovery is not ambiguous.",
+            "unknown_destination": "A clear requested geographic place is absent from candidates; never substitute a similar name.",
+            **{key: f"Requested geographic search scope {name}, not an origin, exclusion, analogy, generic/common word or supplied-text mention. Ignoring a photo does not exclude a place." for key, name in choices.items()},
         }
         if self.client is None:
             self.client = httpx.Client(timeout=self.config["jev_timeout_seconds"], follow_redirects=False, trust_env=False)

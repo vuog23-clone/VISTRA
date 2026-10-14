@@ -73,6 +73,45 @@ These changes do not prune existing images, unrelated containers, build caches, 
 
 Build-cache and context design follow [Docker's cache guidance](https://docs.docker.com/build/cache/optimize/); database reuse uses [Compose include](https://docs.docker.com/compose/how-tos/multiple-compose-files/include/).
 
+## Vercel
+
+Deploy from the **repository root** with the **FastAPI** framework preset. The root
+`app.py` exports `app = create_app()` from `api.server`; `vercel.json` selects the
+preset. `main.py` is the terminal entry point and does not export an ASGI app, so
+`main:app` fails with `Attribute "app" not found in module "main"`.
+
+In the Vercel project settings:
+
+1. Set **Root Directory** to the repository root (`./`).
+2. Use the **FastAPI** preset and leave **Build Command** and **Output Directory**
+   at their defaults. Remove any old command or entry-point override targeting
+   `main:app`; Vercel detects the root `app.py`.
+3. Add `VISTRA_API_KEY` as a secret environment variable: at least 32 characters,
+   with no whitespace. Application creation requires it, including when Vercel
+   imports the app during a build. Use the same key in clients' `X-API-Key` header.
+4. For chat, also set `OPENAI_API_KEY`, `JEV_API_KEY` (or `TYPESAFE_API_KEY`), and
+   `POSTGRES_DSN` for a PostgreSQL server reachable from Vercel. Retrieval also
+   needs a reachable `QDRANT_URL` and the configured models and indexed data.
+   The default loopback database URLs refer to the Vercel instance, not your PC.
+5. Redeploy, then check `/health` for `{"status":"ok"}` and `/docs` for Swagger.
+   This deployment serves the developer API; the browser demo runs separately.
+
+To check the same entry point locally, after configuring `.env`:
+
+```powershell
+.\.venv\python.exe -B -m uvicorn app:app --host 127.0.0.1 --port 8067
+```
+
+This resolves app discovery. A successful health check does not verify chat,
+database connectivity, providers, or retrieval. The full retrieval pipeline uses
+PyTorch, Transformers, local embedding models, and prepared datasets; the models
+and datasets are ignored by Git and are not supplied by importing the repository.
+Vercel's standard Python function bundle limit is **500 MB uncompressed**, so
+check the installed dependencies and model assets against your deployment limits
+before using full retrieval. See the [Python runtime documentation](https://vercel.com/docs/functions/runtimes/python).
+The existing Docker deployment supports the full pipeline with persistent model
+and dataset mounts when it cannot fit a Vercel function.
+
 ## Developer request
 
 Send JSON to `POST /v1/chat` with `X-API-Key: <your developer key>`:

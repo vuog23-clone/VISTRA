@@ -35,3 +35,5 @@ Open **[VISTRA chat](http://127.0.0.1:8000)**. Try “Plan three relaxed days in
 **Terminal:** run `main.py --chat`; type `/last` to inspect the full backend JSON.
 
 **Developer API:** follow the [API &amp; Docker guide](api/README.md) to call `POST /v1/chat` with `X-API-Key`. See the [frontend guide](frontend/README.md) for chat and memory controls.
+
+**Vercel:** the developer API uses the root `app.py`, with the FastAPI preset. See the [Vercel setup and runtime requirements](api/README.md#vercel).

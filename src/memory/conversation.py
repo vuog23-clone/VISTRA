@@ -102,6 +102,5 @@ class ConversationInterpreter(RAGGenerator):
                     raise
                 payload['repair_feedback'] = {'validation_error': str(error),
                     'rejected_understanding': value.model_dump(),
-                    'instruction': 'Correct the interpretation. Preference changes must quote the latest message exactly, '
-                                   'use unique keys, and never copy preferences from older memory or temporary trip requirements. '
-                                   'Use an empty preference_changes list when no durable update was requested.'}
+                    'instruction': 'Fix the validation error. Durable changes need exact latest-message quotes and unique keys; '
+                                   'exclude old/temporary preferences and return [] without an explicit durable update.'}

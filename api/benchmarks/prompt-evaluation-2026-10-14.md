@@ -1,5 +1,7 @@
 **VISTRA prompt evaluation — October 14, 2026**
 
+Historical review of the prompts before the concise rewrite later on October 14. Source links now point to updated files; the assessments and quoted wording below describe the earlier version.
+
 VISTRA has a strong prompt design for evidence handling, bilingual requests, memory precedence, and structured planning. Its main weaknesses are ambiguous wording about legitimate user instructions, limited evaluation of answer usefulness, and an itinerary contract that needs an explicit policy for incompatible constraints. These are the first areas to improve before adding more examples or longer instructions.
 
 Scope: all application prompt definitions found in the current working files under `E:\VISTRA`, including nine task prompts, one shared memory policy, the three classifier criteria sets, and the auxiliary memory-repair and photo-label instructions. Existing uncommitted changes were included in the review. Application prompts were not edited.
