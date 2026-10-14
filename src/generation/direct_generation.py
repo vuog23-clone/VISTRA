@@ -45,7 +45,7 @@ class DirectGenerator(RAGGenerator):
             "Không thể tạo câu trả lời an toàn. Vui lòng diễn đạt lại câu hỏi.")
 
     def _respond(self, user_query, *, feedback=None, conversation_memory=None):
-        completion = self.client.responses.create(
+        completion = self._text_completion(
             model=self.model_name, instructions=DIRECT_RESPONSE_PROMPT,
             input=json.dumps(CredentialRedactor().data({"question": user_query,
                 **({"conversation_memory": conversation_memory} if conversation_memory is not None else {}),

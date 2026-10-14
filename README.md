@@ -16,6 +16,8 @@ Chat naturally, explore photos and place details beneath each reply, and revisit
 
 PostgreSQL holds short- and long-term memory; Qdrant retrieves travel evidence. Itineraries follow a TravelPlanner-style tools → notebook → planner flow, with constraint checks and bounded repair before delivery.
 
+The pipeline now also uses optional OpenRouteService estimates to check travel time between stops.
+
 ## Get started
 
 Use the existing `.env`, model cache, and indexed datasets. New installations need provider keys and PostgreSQL settings; see the [setup guide](api/README.md).
@@ -32,4 +34,4 @@ Open **[VISTRA chat](http://127.0.0.1:8000)**. Try “Plan three relaxed days in
 
 **Terminal:** run `main.py --chat`; type `/last` to inspect the full backend JSON.
 
-**Developer API:** follow the [API & Docker guide](api/README.md) to call `POST /v1/chat` with `X-API-Key`. See the [frontend guide](frontend/README.md) for chat and memory controls.
+**Developer API:** follow the [API &amp; Docker guide](api/README.md) to call `POST /v1/chat` with `X-API-Key`. See the [frontend guide](frontend/README.md) for chat and memory controls.

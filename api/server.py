@@ -77,18 +77,23 @@ class BodyLimitMiddleware:
 
 
 class ChatRequest(BaseModel):
-    model_config = ConfigDict(extra='forbid', strict=True)
+    model_config = ConfigDict(extra='forbid', strict=True, json_schema_extra={
+        'examples': [{'user_id': 'customer-123', 'session_id': 'example-session', 'message': 'Who are you?'}],
+    })
     user_id: str = Field(pattern=IDENTITY_PATTERN, description="Your application's user identifier.")
     session_id: str = Field(pattern=IDENTITY_PATTERN, description='Reuse for follow-up messages.')
     message: str = Field(min_length=1, max_length=8000)
     retrieval_limit: int = Field(default=20, ge=1, le=20)
     response_mode: Literal['auto', 'retrieval', 'llm_only'] = 'auto'
     route: Literal['auto', 'text', 'hybrid'] = 'auto'
-    location: str | None = Field(default=None, min_length=1, max_length=160)
+    location: str | None = Field(default=None, min_length=1, max_length=160,
+                                description='Optional destination override. Omit to detect it from the conversation.')
     retrieve_only: bool = False
     include_weather: bool | None = None
-    start_date: str | None = None
-    end_date: str | None = None
+    start_date: str | None = Field(default=None,
+        description='Optional trip start in YYYY-MM-DD format. Supply with end_date, or omit both.')
+    end_date: str | None = Field(default=None,
+        description='Optional trip end in YYYY-MM-DD format. Supply with start_date, at most 14 inclusive days.')
     planning_mode: Literal['auto', 'off'] = 'auto'
 
     @model_validator(mode='after')

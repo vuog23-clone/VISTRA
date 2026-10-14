@@ -3,9 +3,10 @@
 from datetime import timedelta
 from math import ceil
 
-from src.schema.planning import Itinerary, ValidationIssue
+from src.schema.planning import Itinerary, ValidationIssue, revision_scope
 from src.schema.weather import iso_date
 from src.resolver.location_resolver import LocationResolver
+from src.service.routing_service import route_for_pair
 
 
 def minutes(value):
@@ -156,7 +157,12 @@ def validate_itinerary(plan, request, notebook, *, previous=None, revision_day=N
             if before[1] > after[0]:
                 issue('error', 'time_overlap', f'{before[2]} ({before[0]}–{before[1]} minutes) overlaps {after[2]} ({after[0]}–{after[1]} minutes).', day.day)
             elif before[3] != 'transport' and after[3] != 'transport':
-                issue('unknown', 'transport_time', 'Travel time between venues has not been verified.', day.day)
+                route = route_for_pair(notebook, records[before[2]], records[after[2]], request)
+                if route is None:
+                    issue('unknown', 'transport_time', 'Travel time between venues has not been verified.', day.day)
+                elif after[0] - before[1] < ceil(route[2]/60):
+                    issue('error', 'transport_time',
+                          f'{before[2]} to {after[2]} needs about {ceil(route[2]/60)} minutes by {route[1].mode}; the proposed gap is too short.', day.day)
         if day.day > 1 and day.city != plan.days[day.day-2].city and not day.transportation:
             issue('unknown', 'city_route', 'An intercity move has no supported transportation.', day.day)
         if day.day == 1 and request.origin and request.origin != day.city and not day.transportation:
@@ -196,11 +202,12 @@ def validate_itinerary(plan, request, notebook, *, previous=None, revision_day=N
             issue('unknown', 'budget', 'The evidence currency does not match the budget currency.')
     if request.requirements:
         issue('unknown', 'additional_requirements', 'Free-text requirements without structured evidence still need confirmation.')
-    if previous and revision_day:
+    scope = revision_scope(revision_day)
+    if previous and scope:
         if len(previous.days) != len(plan.days):
             issue('error', 'revision_scope', 'A day-specific edit cannot add or remove other days.')
         for old, new in zip(previous.days, plan.days):
-            if old.day != revision_day:
+            if old.day not in scope:
                 def signature(day):
                     return day.city, day.date, [(kind, item.entity_id, item.start_time, item.end_time) for kind, item in day.choices()]
                 # Bind current IDs so new notebook entry numbers don't count as edits.

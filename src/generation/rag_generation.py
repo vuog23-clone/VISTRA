@@ -161,7 +161,7 @@ class RAGGenerator:
     def _draft(self, user_query, context, *, feedback=None, images=(), conversation_memory=None):
         redactor = CredentialRedactor()
         # The LLM receives evidence, not the progress log or raw database payloads.
-        completion = self.client.responses.create(
+        completion = self._text_completion(
             model=self.model_name,
             instructions=RAG_PROMPT,
             input=multimodal_input(json.dumps(redactor.data({"question": user_query, "retrieved_context": context,
@@ -179,6 +179,21 @@ class RAGGenerator:
         # Keep raw credentials visible to the deterministic safety check, then
         # redact only an approved answer at the output boundary.
         return completion.output_text.strip()
+
+    def _text_completion(self, **options):
+        from src.generation.streaming import current_answer_stream
+        preview = current_answer_stream()
+        if preview is None:
+            return self.client.responses.create(**options)
+        preview.begin()
+        with self.client.responses.stream(**options) as stream:
+            for event in stream:
+                if event.type == 'response.output_text.delta':
+                    preview.feed(event.delta)
+            completion = stream.get_final_response()
+        if completion.status == 'completed':
+            preview.finish()
+        return completion
 
     def _grounding_issues(self, user_query, context, answer, *, images=(), conversation_memory=None):
         safety_issues = answer_safety_issues(answer, context)

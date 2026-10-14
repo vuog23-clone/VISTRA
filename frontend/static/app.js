@@ -46,18 +46,24 @@
     $('clear-chat').disabled = blocked || !state.detail?.messages?.length;
     $('reload-chat').disabled = blocked;
     $('retrieval-limit').disabled = blocked;
-    document.querySelectorAll('.session-item,.suggestion,.forget-button').forEach(button => { button.disabled = blocked; });
+    document.querySelectorAll('.session-item,.session-delete,.suggestion,.forget-button,.clarification-choice').forEach(button => { button.disabled = blocked; });
   }
   function renderSessions() {
     const list = $('session-list'); list.replaceChildren();
     if (!state.sessions.length) list.append(el('p', 'sidebar-empty', 'Your travel stories will live here.'));
     for (const session of state.sessions) {
+      const row = el('div', `session-row${session.id === state.session ? ' active' : ''}`);
       const button = el('button', `session-item${session.id === state.session ? ' active' : ''}`);
       button.dataset.sessionId = session.id;
       button.type = 'button'; button.title = session.title;
       if (session.id === state.session) button.setAttribute('aria-current', 'page');
       button.append(icon('chat'), el('span', '', session.destination || session.title));
-      button.addEventListener('click', () => openSession(session.id)); list.append(button);
+      button.addEventListener('click', () => openSession(session.id));
+      const remove = el('button', 'icon-button session-delete');
+      remove.type = 'button'; remove.title = 'Delete conversation';
+      remove.setAttribute('aria-label', `Delete conversation: ${session.destination || session.title}`);
+      remove.append(icon('trash')); remove.addEventListener('click', () => confirmDelete(session.id));
+      row.append(button, remove); list.append(row);
     }
     const active = state.sessions.find(session => session.id === state.session);
     $('conversation-title').textContent = active?.destination ? `A little closer to ${active.destination}` : active?.title || 'A new beginning';
@@ -153,8 +159,19 @@
   function planningPanel(planning) {
     const box = el('section', 'weather-panel'); box.setAttribute('aria-label', 'Itinerary planning checks');
     const status = {verified:'Checks passed against tool data',partial:'Itinerary draft · some details remain unverified',
-      failed:'The draft did not pass itinerary validation',needs_clarification:'More trip details are needed'};
+      failed:'The draft did not pass itinerary validation',needs_clarification:'One quick choice, then we’ll continue'};
     box.append(el('h3', 'planning-heading', status[planning.status] || 'Itinerary planning'));
+    if (planning.status === 'needs_clarification' && planning.clarification_options?.length) {
+      const choices = el('div', 'clarification-choices');
+      for (const choice of planning.clarification_options.slice(0, 4)) {
+        if (typeof choice.label !== 'string' || typeof choice.reply !== 'string') continue;
+        const button = el('button', 'clarification-choice', choice.label);
+        button.type = 'button'; button.disabled = state.busy || state.loading;
+        button.addEventListener('click', () => sendMessage(choice.reply));
+        choices.append(button);
+      }
+      box.append(choices);
+    }
     const messages = [...new Set((planning.issues || []).map(issue => issue.message))];
     if (messages.length) { const list = el('ul', 'planning-issues'); messages.slice(0,8).forEach(message => list.append(el('li','',message))); box.append(list); }
     if (planning.tool_trace?.length) {
@@ -198,7 +215,8 @@
     const dots = el('span', 'thinking-dots'); dots.setAttribute('aria-hidden', 'true');
     for (let i = 0; i < 3; i++) dots.append(el('span'));
     const label = el('span', '', 'Remembering the conversation'); line.append(dots, label); main.append(line); row.append(avatar, main); $('messages').append(row);
-    scrollChat(); return { row, label };
+    const body = el('div', 'message-body streaming'); main.append(body);
+    scrollChat(); return { row, label, body };
   }
   function renderMemory() {
     const detail = state.detail || { trip_state: {}, memories: [], summary: '' };
@@ -237,6 +255,28 @@
     return detail;
   }
   async function refreshSessions() { state.sessions = (await api('/api/sessions')).sessions; renderSessions(); }
+  let deleteTarget = null;
+  function confirmDelete(session) {
+    if (state.busy || state.loading || !state.ready) return;
+    deleteTarget = session;
+    const item = state.sessions.find(item => item.id === session);
+    $('delete-chat-name').textContent = item?.title || 'This conversation';
+    $('delete-chat-dialog').showModal();
+  }
+  async function deleteConversation() {
+    const session = deleteTarget;
+    if (!session || state.busy || state.loading) return;
+    $('delete-chat-dialog').close(); deleteTarget = null;
+    clearError(); state.busy = true; syncControls();
+    try {
+      await api(`/api/sessions/${encodeURIComponent(session)}`, { method:'DELETE' });
+      state.sessions = state.sessions.filter(item => item.id !== session); renderSessions();
+      state.busy = false;
+      if (state.session === session) await openSession(newID());
+      toast('Conversation deleted. Your preferences are kept.');
+    } catch (error) { showError(error.message); }
+    finally { state.busy = false; syncControls(); }
+  }
   function syncPanels() {
     const small = matchMedia('(max-width:760px)').matches;
     $('sidebar').inert = small && !$('sidebar').classList.contains('open');
@@ -267,21 +307,40 @@
     if (state.busy || state.loading || !state.ready || !message.trim()) return;
     if (message.length > 8000) { showError('Please keep your message under 8,000 characters.'); return; }
     clearError(); state.busy = true; $('message-input').value = ''; resizeInput(); addMessage('user', message);
-    const pending = thinking(); let received = false;
+    const pending = thinking(); let received = false, preview = '';
+    function showPreview(text, phase = 'writing') {
+      preview = text; pending.body.textContent = text;
+      pending.label.textContent = phase === 'checking' ? 'Checking the reply' : 'Writing your reply';
+      const area = $('chat-area');
+      if (area.scrollHeight-area.scrollTop-area.clientHeight < 160) area.scrollTop = area.scrollHeight;
+    }
+    async function revealCheckedAnswer(answer) {
+      if (preview.trim() === answer.trim() || document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const words = answer.match(/\s*\S+\s*/gu) || [answer];
+      const batch = Math.max(1, Math.ceil(words.length/120));
+      let text = '';
+      for (let i = 0; i < words.length; i += batch) {
+        text += words.slice(i, i+batch).join(''); showPreview(text);
+        await new Promise(resolve => setTimeout(resolve, 12));
+      }
+    }
     try {
       const response = await fetch('/api/chat', { method:'POST', credentials:'same-origin', headers:{ 'Content-Type':'application/json','X-VISTRA-Demo':'1' }, body:JSON.stringify({ session_id:state.session, message, retrieval_limit:Number($('retrieval-limit').value) }) });
       if (!response.ok) { const data = await response.json(); throw new Error(data.error || data.detail || 'Unable to send this message.'); }
       if (!response.body) throw new Error('This browser cannot read streamed replies.');
       const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = '';
-      function consume(block) {
+      async function consume(block) {
         const lines = block.split('\n'); const event = lines.find(line => line.startsWith('event:'))?.slice(6).trim();
         const text = lines.filter(line => line.startsWith('data:')).map(line => line.slice(5).trimStart()).join('\n');
         if (!text) return;
         const data = JSON.parse(text);
         if (event === 'progress') pending.label.textContent = data.message;
+        if (event === 'answer') showPreview(data.text, data.phase);
         if (event === 'error') throw new Error(data.message);
         if (event === 'result') {
-          received = true; pending.row.remove();
+          received = true;
+          await revealCheckedAnswer(data.answer);
+          pending.row.remove();
           const note = data.needs_clarification ? 'A little more detail will help' : data.recalled_long_term > 0 ? 'With your preferences in mind' : '';
           addMessage('assistant', data.answer, data.sources || [], note, data.cards || [], data.weather || null, data.planning || null);
           if (data.media_error) showError(data.media_error);
@@ -290,7 +349,7 @@
       try {
         while (true) {
           const { value, done } = await reader.read(); buffer += decoder.decode(value, { stream:!done }); buffer = buffer.replace(/\r\n/g, '\n');
-          let boundary; while ((boundary = buffer.indexOf('\n\n')) >= 0) { const block = buffer.slice(0, boundary); buffer = buffer.slice(boundary + 2); consume(block); }
+          let boundary; while ((boundary = buffer.indexOf('\n\n')) >= 0) { const block = buffer.slice(0, boundary); buffer = buffer.slice(boundary + 2); await consume(block); }
           if (done) break;
         }
       } finally { reader.releaseLock(); }
@@ -325,6 +384,7 @@
   $('tab-session').addEventListener('click', () => setTab('session')); $('tab-longterm').addEventListener('click', () => setTab('longterm'));
   document.querySelector('.memory-tabs').addEventListener('keydown', event => { if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') { event.preventDefault(); const target = $('tab-session').getAttribute('aria-selected') === 'true' ? 'longterm' : 'session'; setTab(target); $(`tab-${target}`).focus(); } });
   document.addEventListener('keydown', event => {
+    if ($('delete-chat-dialog').open) return;
     if (event.key === 'Escape') { closeSidebar(); if (!$('memory-panel').hidden) toggleMemory(false); }
     const panel = !$('memory-panel').hidden && matchMedia('(max-width:1150px)').matches ? $('memory-panel') : $('sidebar').classList.contains('open') && matchMedia('(max-width:760px)').matches ? $('sidebar') : null;
     if (event.key === 'Tab' && panel) {
@@ -335,13 +395,10 @@
     }
   });
   window.addEventListener('resize', () => { resizeInput(); syncPanels(); });
-  $('clear-chat').addEventListener('click', async () => {
-    if (state.busy || !state.detail?.messages?.length) return;
-    state.busy = true; syncControls();
-    try { await api(`/api/sessions/${encodeURIComponent(state.session)}`, { method:'DELETE' }); state.busy = false; await Promise.all([refreshSessions(), openSession(newID())]); toast('Chat cleared. Your preferences are kept.'); }
-    catch (error) { showError(error.message); }
-    finally { state.busy = false; syncControls(); }
-  });
+  $('clear-chat').addEventListener('click', () => confirmDelete(state.session));
+  $('delete-chat-confirm').addEventListener('click', deleteConversation);
+  $('delete-chat-cancel').addEventListener('click', () => $('delete-chat-dialog').close());
+  $('delete-chat-dialog').addEventListener('close', () => { deleteTarget = null; });
   async function boot() {
     state.session = storage.get() || newID(); storage.set(state.session); setTab('session');
     try {

@@ -3,7 +3,7 @@ import re
 import unicodedata
 
 
-_VI_WORDS = set("toi minh ban hay muon can cho ve gi nao nhung cac khong bao nhieu tim kiem goi y tai o voi va cua den tu dia diem an uong gioi thieu thong tin mo gio".split())
+_VI_WORDS = set("toi minh ban hay muon can cho ve gi nao nhung cac khong bao nhieu tim kiem goi y tai o voi va cua den tu dia diem an uong gioi thieu thong tin mo gio ngay dem".split())
 _EN_WORDS = set("i you please tell what where when which how show find recommend suggest compare about the in on is are can does for with to from and near opening hours price places photos similar".split())
 
 

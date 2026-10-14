@@ -421,7 +421,8 @@ def create_app(*, chat_factory=make_demo_chat, repository_factory=MemoryReposito
                     previous_stage = stage
             try:
                 offer("progress", {"message": "Remembering the conversation"})
-                with chat_factory() as service:
+                from src.generation.streaming import answer_stream
+                with chat_factory() as service, answer_stream(lambda data: offer('answer', data)):
                     result = service.chat(owner, body.session_id, message, limit=body.retrieval_limit, on_progress=progress)
                 sources = [{"id": source["source_id"], "name": source.get("name") or "Travel source",
                             "url": source.get("url")} for source in reply_sources(result)]

@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from api.server import create_app
 from api.tests.test_server import KEY, HEADERS
 from src.database.postgres_memory_store import PostgresMemoryStore
-from src.schema.memory import TurnUnderstanding, TripDetails, PreferenceChange
+from src.schema.memory import TurnUnderstanding, TripDetails, TripState, PreferenceChange
 from src.service.chat_service import ChatService
 
 
@@ -68,6 +68,68 @@ class MemoryTests(unittest.TestCase):
         snapshot = self.store.load_session(self.owner, 'first-chat')
         self.assertEqual(snapshot.version, 0)
         self.assertEqual(snapshot.recent_messages, [])
+
+    def test_failed_edit_keeps_the_saved_itinerary(self):
+        from src.schema.planning import Itinerary
+        previous = Itinerary.model_validate({'days': [{'day': 1, 'city': 'Hanoi'}]})
+        self.store.commit_turn(self.owner, 'trip', expected_version=0, user_message='Create a Hanoi plan.',
+            answer='Saved test plan.', summary='Trip planned.',
+            trip_state=TripState(destinations=['Hanoi'], duration_days=1, itinerary=previous))
+        class Interpreter:
+            def understand(self, query, memory):
+                return TurnUnderstanding(intent='travel', standalone_query=query, summary='Edit requested.',
+                    action='revise_itinerary', revision_day=1,
+                    trip_state=TripDetails(destinations=['Hanoi'], duration_days=1), preference_changes=[])
+        def pipeline(query, **options):
+            return {'answer': 'The edit failed validation; the previous plan is retained.',
+                    'pipeline_status': 'failed', 'itinerary': None, 'context': {'sources': []}}
+        with ChatService(interpreter=Interpreter(), pipeline=pipeline) as service:
+            service.chat(self.owner, 'trip', 'Change day 1 dinner.')
+        snapshot = self.store.load_session(self.owner, 'trip')
+        self.assertEqual(snapshot.version, 2)
+        self.assertEqual(snapshot.trip_state.itinerary, previous)
+
+    def test_provider_exception_commits_no_messages_or_preferences(self):
+        class Interpreter:
+            def understand(self, query, memory):
+                return TurnUnderstanding(intent='memory', standalone_query=query, summary='Diet mentioned.',
+                    action='answer', trip_state=TripDetails(),
+                    preference_changes=[PreferenceChange(operation='set', key='diet', source_quote=query)])
+        def pipeline(query, **options):
+            raise RuntimeError('Test provider disconnected')
+        with ChatService(interpreter=Interpreter(), pipeline=pipeline) as service:
+            with self.assertRaises(RuntimeError):
+                service.chat(self.owner, 'failed', 'Remember that I prefer vegetarian food.')
+        snapshot = self.store.load_session(self.owner, 'failed')
+        self.assertEqual(snapshot.version, 0)
+        self.assertEqual(snapshot.recent_messages, [])
+        self.assertEqual(self.store.recall(self.owner), [])
+
+    def test_short_nights_reply_corrects_and_saves_pending_trip_details(self):
+        from api.tests.test_clarification import pending_memory, stale_understanding
+        from src.planning.orchestrator import trip_request, clarification
+        memory = pending_memory()
+        self.store.commit_turn(self.owner, 'clarify', expected_version=0,
+            user_message='Plan three days from October 20 to October 24, 2026.',
+            answer='Which stay length should I use?', summary='Stay length needs clarification.',
+            trip_state=memory.trip_state)
+        class Interpreter:
+            def understand(self, query, context):
+                return stale_understanding(context)
+        def pipeline(query, **options):
+            request = trip_request(query, options['conversation_memory']['trip_state'])
+            self.assertEqual(request.duration_days, 5)
+            self.assertIsNone(clarification(request, None, 'create_itinerary', None, query))
+            return {'answer': 'Your trip details are ready.', 'context': {'sources': []}, 'pipeline_status': 'partial'}
+        with ChatService(interpreter=Interpreter(), pipeline=pipeline) as service:
+            result = service.chat(self.owner, 'clarify', '4 nights at Duong Dong town')
+        self.assertIn('5 days and 4 nights', result['answer'])
+        snapshot = self.store.load_session(self.owner, 'clarify')
+        self.assertEqual(snapshot.trip_state.duration_days, 5)
+        self.assertEqual(snapshot.trip_state.end_date, '2026-10-24')
+        self.assertEqual(snapshot.trip_state.budget_amount, 6000000)
+        self.assertIsNone(snapshot.trip_state.pending_clarification)
+        self.assertEqual(snapshot.version, 2)
 
 
 if __name__ == '__main__':

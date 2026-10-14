@@ -117,6 +117,13 @@ memory_trip_limit: 3
 weather_enabled: true
 weather_timeout_seconds: 8.0
 
+# --- Road/walking route estimates (optional ORS_API_KEY in .env) ---
+# No live traffic, transit schedules, fares or booking availability. Default walking.
+# Bound matrix candidates per city to control latency, quota and planner context.
+ors_enabled: true
+ors_timeout_seconds: 8.0
+ors_max_locations: 12
+
 # --- TravelPlanner-style tool collection, notebook and structured itineraries ---
 planning_enabled: true
 planning_max_steps: 20

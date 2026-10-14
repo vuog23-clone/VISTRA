@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from src.schema.weather import WeatherEvidence, iso_date
+from src.schema.routing import RouteMatrixEvidence, ROUTING_SOURCE_URL
 from src.security.guardrails import validate_text
 
 
@@ -69,7 +70,7 @@ class EvidenceRecord(PlanningModel):
     name: str = Field(min_length=1, max_length=300)
     category: str | None = Field(default=None, max_length=100)
     city: str = Field(min_length=1, max_length=160)
-    provider: Literal['Wikivoyage', 'Google metadata', 'TravelPlanner benchmark']
+    provider: Literal['Wikivoyage', 'Google metadata', 'TravelPlanner benchmark', 'OpenRouteService']
     url: str | None = Field(default=None, max_length=2048)
     excerpt: str | None = Field(default=None, max_length=1800)
     latitude: float | int | None = Field(default=None, ge=-90, le=90, allow_inf_nan=False)
@@ -93,7 +94,7 @@ class EvidenceRecord(PlanningModel):
 
     @model_validator(mode='after')
     def checked(self):
-        prefix = {'Wikivoyage':'wikivoyage:', 'Google metadata':'google:', 'TravelPlanner benchmark':'benchmark:'}[self.provider]
+        prefix = {'Wikivoyage':'wikivoyage:', 'Google metadata':'google:', 'TravelPlanner benchmark':'benchmark:', 'OpenRouteService':'ors:'}[self.provider]
         if not self.entity_id.startswith(prefix):
             raise ValueError('Evidence identity does not match its provider.')
         for value in (self.name, self.city, self.excerpt, self.origin, self.destination, self.mode, self.room_type):
@@ -101,7 +102,10 @@ class EvidenceRecord(PlanningModel):
                 validate_text(value, 'planning evidence', max_chars=1800, reject_secrets=False)
         if self.departure_date:
             iso_date(self.departure_date)
-        if self.url:
+        if self.provider == 'OpenRouteService':
+            if self.kind != 'transport' or self.url != ROUTING_SOURCE_URL or self.mode not in ('walking', 'driving', 'taxi'):
+                raise ValueError('Route evidence must use the routing provider and a supported mode.')
+        elif self.url:
             from src.security.context import checked_source_url
             self.url = checked_source_url(self.url, 'text' if self.provider == 'Wikivoyage' else 'image')
         if self.opening_hours is not None:
@@ -116,10 +120,13 @@ class ToolResult(PlanningModel):
     status: Literal['available', 'partial', 'unavailable', 'no_results', 'not_applicable']
     records: list[EvidenceRecord] = Field(default_factory=list, max_length=20)
     weather: WeatherEvidence | None = None
+    route_matrix: RouteMatrixEvidence | None = None
     note: str = Field(max_length=600)
 
     @model_validator(mode='after')
     def checked(self):
+        if self.route_matrix is not None and self.tool != 'DistanceMatrix':
+            raise ValueError('Only DistanceMatrix can return routing evidence.')
         expected = {'GuideSearch':'guide','FlightSearch':'flight','DistanceMatrix':'transport',
                     'RestaurantSearch':'restaurant','AttractionSearch':'attraction',
                     'AccommodationSearch':'accommodation','CitySearch':'city'}
@@ -190,6 +197,11 @@ class ValidationIssue(PlanningModel):
     day: int | None = Field(default=None, ge=1, le=14)
 
 
+class ClarificationChoice(PlanningModel):
+    label: str = Field(min_length=1, max_length=100)
+    reply: str = Field(min_length=1, max_length=500)
+
+
 class PlanningReport(PlanningModel):
     status: Literal['verified', 'partial', 'failed', 'needs_clarification']
     action: Literal['create_itinerary', 'revise_itinerary']
@@ -198,6 +210,7 @@ class PlanningReport(PlanningModel):
     repair_attempts: int = Field(default=0, ge=0, le=2)
     known_cost: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     currency: str | None = None
+    clarification_options: list[ClarificationChoice] = Field(default_factory=list, max_length=4)
 
 
 def duration_from_text(text):
@@ -231,13 +244,36 @@ def revision_days_from_text(query):
     names = {'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'seven':7,
              'eight':8,'nine':9,'ten':10,'eleven':11,'twelve':12,'thirteen':13,'fourteen':14,
              'mot':1,'hai':2,'ba':3,'bon':4,'nam':5,'sau':6,'bay':7,'tam':8,'chin':9,'muoi':10}
-    token = r'(\d{1,2}|'+'|'.join(names)+r')\b'
-    targeted = re.search(r'\b(?:change|revise|update|edit|adjust|modify|make|sua|doi)\s+(?:(?:only|just|chi)\s+)?(?:day|ngay)\s*'+token, text)
+    number = r'(?:\d{1,2}|'+'|'.join(names)+r')\b'
+    label = r'(?:days?|ngay)'
+    targeted = re.search(r'\b(?:change|revise|update|edit|adjust|modify|make|sua|doi)\s+(?:(?:only|just|chi)\s+)?'+label+r'\s*'+number, text)
     edit_clause = text[targeted.start():] if targeted else text
     edit_clause = re.split(r'\b(?:keep|preserve|giu)\b', edit_clause, maxsplit=1)[0]
-    matches = re.findall(r'\b(?:day|ngay)\s*'+token, edit_clause)
-    values = {int(value) if value.isdigit() else names[value] for value in matches}
-    return {value for value in values if 1 <= value <= 14}
+    values = set()
+    def integer(value):
+        return int(value) if value.isdigit() else names[value]
+    joined = r'(?:\s*(?:,|and|va|&|to|through|den|-)\s*(?:'+label+r'\s*)?'+number+r')*'
+    mentions = list(re.finditer(r'\b'+label+r'\s*'+number+joined, edit_clause))
+    edits = list(re.finditer(r'\b(?:change|revise|update|edit|adjust|modify|make|move|sua|doi)\s+(?:(?:only|just|chi)\s+)?'+label+r'\s*'+number+joined, edit_clause))
+    selected = edits or mentions[:1]
+    # Comparison days are references, not edit targets ("make day 2 like day 1").
+    if not re.search(r'\b(?:like|similar|match|compare)\b|\bsame as\b', edit_clause):
+        selected += list(re.finditer(r'\b(?:and|va)\s+'+label+r'\s*'+number+joined, edit_clause))
+    for mention in selected:
+        clause = mention.group()
+        values.update(integer(value.group()) for value in re.finditer(number, clause))
+        for pair in re.finditer('('+number+r')\s*(?:to|through|den|-)\s*(?:'+label+r'\s*)?('+number+')', clause):
+            first, last = integer(pair[1]), integer(pair[2])
+            values.update(range(min(first, last), max(first, last)+1))
+    # Keep invalid day numbers visible so clarification can reject them.
+    return values
+
+
+def revision_scope(revision_day):
+    """Internal edits support a single numbered day or a set of numbered days."""
+    if revision_day is None:
+        return frozenset()
+    return frozenset([revision_day]) if type(revision_day) is int else frozenset(revision_day)
 
 
 def explicit_revision_day(query):

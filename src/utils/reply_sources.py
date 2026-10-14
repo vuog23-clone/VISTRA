@@ -11,6 +11,10 @@ def reply_sources(result):
         sources.extend({'source_id': record.evidence_id, 'entity_id': record.entity_id,
                         'name': record.name, 'url': record.url, 'provider': record.provider}
                        for record in notebook.records().values() if record.evidence_id in selected)
+        sources.extend({'source_id': entry.entry_id, 'name': 'OpenRouteService route estimates',
+                        'url': entry.route_matrix.url, 'provider': entry.route_matrix.provider,
+                        'mode': entry.route_matrix.mode, 'fetched_at': entry.route_matrix.fetched_at}
+                       for entry in notebook.entries if entry.route_matrix)
     weather = result.get('weather') or (result.get('context') or {}).get('weather')
     if weather and weather.get('days'):
         from src.schema.weather import WeatherEvidence

@@ -17,6 +17,7 @@ services:
       OPENAI_API_KEY: "${OPENAI_API_KEY:?Set OPENAI_API_KEY in .env}"
       JEV_API_KEY: "${JEV_API_KEY:-${TYPESAFE_API_KEY:-}}"
       OPEN_METEO_API_KEY: "${OPEN_METEO_API_KEY:-}"
+      ORS_API_KEY: "${ORS_API_KEY:-}"
       POSTGRES_HOST: postgres
       POSTGRES_PORT: "5432"
       POSTGRES_DB: "${POSTGRES_DB:-vistra}"

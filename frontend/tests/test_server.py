@@ -141,6 +141,40 @@ class FrontendServerTests(unittest.TestCase):
         self.assertNotIn("user_id", result)
         self.assertEqual(self.client.get("/api/sessions/trip").json()["messages"][0]["content"], "Hello")
 
+    def test_answer_preview_precedes_final_and_final_remains_authoritative(self):
+        from unittest.mock import patch
+        from src.generation.streaming import current_answer_stream
+        original = ChatDouble.chat
+        def chat(service, *args, **options):
+            stream = current_answer_stream()
+            stream.begin(); stream.feed('Draft text '); stream.finish()
+            return original(service, *args, **options)
+        with patch.object(ChatDouble, 'chat', chat):
+            response = self.post()
+        blocks = response.text.strip().split('\n\n')
+        answer_blocks = [block for block in blocks if block.startswith('event: answer')]
+        result_block = next(block for block in blocks if block.startswith('event: result'))
+        self.assertTrue(answer_blocks)
+        self.assertLess(blocks.index(answer_blocks[-1]), blocks.index(result_block))
+        self.assertEqual(json.loads(answer_blocks[-1].split('data: ',1)[1])['text'], 'Draft text ')
+        self.assertEqual(json.loads(result_block.split('data: ',1)[1])['answer'], 'Hello from VISTRA.')
+        messages = self.client.get('/api/sessions/trip').json()['messages']
+        self.assertEqual(messages[-1]['content'], 'Hello from VISTRA.')
+
+    def test_error_after_preview_does_not_emit_or_save_a_completed_turn(self):
+        from unittest.mock import patch
+        from src.generation.streaming import current_answer_stream
+        def chat(*args, **options):
+            stream = current_answer_stream()
+            stream.begin(); stream.feed('Unfinished answer ')
+            raise RuntimeError('Provider disconnected')
+        with patch.object(ChatDouble, 'chat', chat):
+            response = self.post()
+        self.assertIn('event: answer', response.text)
+        self.assertIn('event: error', response.text)
+        self.assertNotIn('event: result', response.text)
+        self.assertEqual(self.client.get('/api/sessions/trip').json()['messages'], [])
+
     def test_owner_is_cookie_scoped_and_not_client_selected(self):
         self.post(message="First browser's message")
         with TestClient(self.app, base_url="http://127.0.0.1") as other:
@@ -202,6 +236,19 @@ class FrontendServerTests(unittest.TestCase):
             self.assertEqual(self.post(retrieval_limit=value).status_code, 422)
         self.assertEqual(ChatDouble.limits, [20, 10])
 
+    def test_delete_removes_only_selected_browser_conversation(self):
+        self.post()
+        self.post(session_id='keep', message='Keep this conversation')
+        with TestClient(self.app, base_url='http://127.0.0.1') as other:
+            other.get('/')
+            other.post('/api/chat', json={'session_id': 'trip', 'message': 'Other browser'}, headers=self.headers)
+            self.client.delete('/api/sessions/trip', headers=self.headers).raise_for_status()
+            self.assertEqual(len(other.get('/api/sessions/trip').json()['messages']), 2)
+        self.assertEqual([item['id'] for item in self.client.get('/api/sessions').json()['sessions']], ['keep'])
+        self.assertEqual(len(self.client.get('/api/sessions/keep').json()['messages']), 2)
+        self.assertEqual(self.client.get('/api/sessions/trip').json()['messages'], [])
+        self.client.delete('/api/sessions/trip', headers=self.headers).raise_for_status()
+
     def test_twenty_cards_survive_reload_and_photos_remain_owner_scoped(self):
         ChatDouble.retrieval = retrieval_fixture(22)['retrieval']
         response = self.post()
@@ -260,6 +307,17 @@ class FrontendServerTests(unittest.TestCase):
         saved = self.client.get('/api/sessions/trip').json()['messages'][1]
         self.assertEqual(saved['planning']['tool_trace'][1], 'NotebookWrite: E2')
         self.assertEqual(saved['itinerary']['days'][0]['attractions'][0]['name'], 'Lake 0')
+
+    def test_clarification_choices_survive_reload(self):
+        ChatDouble.planning = PlanningReport(status='needs_clarification', action='create_itinerary',
+            clarification_options=[{'label': '5 days · 4 nights', 'reply': '5 days'},
+                                   {'label': '3 days · 2 nights', 'reply': '3 days'}]).model_dump()
+        response = self.post()
+        block = next(block for block in response.text.strip().split('\n\n') if block.startswith('event: result'))
+        result = json.loads(block.split('data: ', 1)[1])
+        self.assertEqual(len(result['planning']['clarification_options']), 2)
+        saved = self.client.get('/api/sessions/trip').json()['messages'][1]
+        self.assertEqual(saved['planning']['clarification_options'], ChatDouble.planning['clarification_options'])
 
 
 if __name__ == "__main__":

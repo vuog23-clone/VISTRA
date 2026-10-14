@@ -236,6 +236,7 @@ def answer_safety_issues(answer, context):
         try:
             notebook = EvidenceNotebook.model_validate(context['notebook'])
             allowed.update(record.url for record in notebook.records().values() if record.url)
+            allowed.update(entry.route_matrix.url for entry in notebook.entries if entry.route_matrix)
             if any(entry.weather and entry.weather.days for entry in notebook.entries):
                 allowed.add(WEATHER_SOURCE_URL)
         except ValidationError:

@@ -56,6 +56,8 @@ class ChatService:
         if self.interpreter is None:
             self.interpreter = self._resources.enter_context(ConversationInterpreter(config=self.config))
         understanding = checked_understanding(self.interpreter.understand(user_query, memory), user_query)
+        from src.memory.clarification import resolve_stay_reply
+        understanding, clarification_ack = resolve_stay_reply(understanding, user_query, memory)
         current_state = TripState.model_validate(understanding.trip_state.model_dump())
         old_plan = snapshot.trip_state.itinerary
         from src.resolver.location_resolver import LocationResolver
@@ -87,6 +89,10 @@ class ChatService:
         if mode == "auto" and understanding.intent == "memory" and not constrained:
             # Personal recall/update needs memory, not indexed venue evidence.
             pipeline_options["response_mode"] = "llm_only"
+        elif mode == 'auto' and understanding.intent == 'travel' and understanding.action == 'search':
+            # The conversation LLM already identified a travel evidence request,
+            # including destination discovery and short recommendation follow-ups.
+            pipeline_options['response_mode'] = 'retrieval'
         # Never lose the literal current instruction behind a model rewrite.
         resolved = understanding.standalone_query
         routing_query = (resolved if user_query in resolved else
@@ -116,6 +122,8 @@ class ChatService:
         result = self.pipeline(user_query, routing_query=routing_query,
             conversation_memory=generation_memory.model_dump(), **pipeline_options)
         answer = result.get("answer")
+        if clarification_ack and isinstance(answer, str) and answer.strip():
+            answer = result['answer'] = clarification_ack + '\n\n' + answer
         # Retrieval-only is a read operation, not a chat turn.
         if pipeline_options.get("retrieve_only"):
             return {**result, "chat": {"user_id": user_id, "session_id": session_id,

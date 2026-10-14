@@ -25,6 +25,20 @@ docker compose -f compose.postgres.yaml -f compose.qdrant.yaml up -d
 
 Open [Swagger](http://127.0.0.1:8067/docs), click **Authorize**, and enter `VISTRA_API_KEY`. `GET /health` reports process liveness without loading models or testing providers/data. The browser frontend can run separately on port 8000.
 
+### Route estimates
+
+Add `ORS_API_KEY=your_key` to `.env` to enable OpenRouteService in the shared itinerary pipeline. Obtain a key from the [HeiGIT account dashboard](https://account.heigit.org/); its quota applies to API matrix calls. No extra Python dependency is needed. Restart local servers, or rebuild/recreate the Docker API using the command below.
+
+`DistanceMatrix` collects indexed coordinates after venue searches, then gets directed duration/distance estimates. The planner leaves enough time between covered stops; validation rejects shorter gaps. Replies show estimated minutes, distance, mode, source and fetch time. Walking is the default; request driving or taxi explicitly. Public transit, live traffic, fares and booking availability remain unknown. Intercity estimates use a separate cached city matrix, with exact city-center coordinates from guides or the local Wikivoyage geo index; a missing departure-city coordinate remains unknown.
+
+`config.yaml` controls `ors_enabled`, `ors_timeout_seconds` (8 by default) and `ors_max_locations` (12, maximum 16). A bounded per-process cache reuses matrices for 30 minutes. Candidates beyond the limit, unreachable pairs, missing keys, quota errors and outages leave partial plans. Routing uses the [current HeiGIT endpoint](https://ask.openrouteservice.org/t/deprecating-api-openrouteservice-org-in-favour-of-api-heigit-org/7912) and [official matrix format](https://giscience.github.io/openrouteservice/api-reference/endpoints/matrix/).
+
+Walking candidates favor proximity to the indexed city center, retaining saved venue identities for edits. Where enough route-covered meal/attraction candidates exist, the planner's output schema restricts those choices to covered venues. This does not infer walking times from straight-line distances.
+
+Itinerary planning uses the TravelPlanner-style adaptive loop: retrieve an initial guide, let the LLM select the next tool from the request and notebook observations, execute it, write its evidence to the notebook, and repeat before structured planning and validation. Code enforces tool prerequisites, request scope, repetition limits and `planning_max_steps`; it provides a fallback when selection fails. Weather and routing remain available alongside venue tools. `planning_max_repairs` controls bounded repair passes, with code repairs attempted before another planner call.
+
+Explicit edits to one or several numbered days preserve the other days; invalid day numbers trigger clarification. If tool evidence exceeds the notebook budget, excess forecasts are marked partial or unavailable, and collection stops safely if even a failure observation cannot fit. Missing evidence cannot become verified travel facts.
+
 ## Docker
 
 Docker Compose 2.20.3 or later is required for `include`. Run from the project root:
@@ -108,5 +122,18 @@ docker compose --env-file .env -f api/compose.yaml config --quiet
 ```
 
 The optional PostgreSQL tests create unique test owners and delete only those owners. Normal API tests use injected backends; they do not call LLM providers.
+
+To exercise the running API with real providers, retrieval, cross-session memory and a three-day itinerary followed by a scoped edit:
+
+```powershell
+$env:VISTRA_TEST_DOCKER='1'
+$env:VISTRA_TEST_LIVE='1'
+$env:VISTRA_TEST_API_URL='http://127.0.0.1:8067'
+.\.venv\python.exe -B -m unittest api.tests.test_docker -v
+```
+
+These checks use the configured developer key, make real provider requests, and delete only their temporary users. Without the URL override they target an isolated API at port 18067.
+
+To also test real ORS calls, set `$env:VISTRA_TEST_ORS='1'` and run `python -B -m unittest api.tests.test_routing -v`. This checks public Hanoi coordinates and indexed venues; it consumes matrix quota without saving chat turns.
 
 On October 13, 2026, the image built successfully and Docker reported 1.71 GB versus 2.17 GB for the previous image (about 21% smaller). A source-only rebuild reused dependency layers and took about four seconds. In one read-only CPU benchmark against the existing Hanoi indexes, text retrieval took 41.2 seconds on first load and 1.45 seconds on the repeated query; hybrid retrieval took 16.4 seconds when first loading its image model and 1.98 seconds on repetition. These are local retrieval measurements, excluding LLM generation; cold requests still load models, and real chat latency depends on providers and evidence.

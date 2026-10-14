@@ -48,6 +48,11 @@ class PostgresGalleryTests(unittest.TestCase):
         self.assertIsNone(self.repo.photo(self.owner, 'trip', self.turn, 0))
         self.assertEqual(len(self.repo.store.recall(self.owner)), 1)
         self.assertFalse(self.repo.save_media(self.owner, 'trip', self.turn, self.media))
+        self.assertEqual(self.repo.sessions(self.owner), [])
+        with self.repo.store.connection.cursor() as cursor:
+            cursor.execute('SELECT count(*) AS count FROM vistra_demo_reply_media WHERE user_id=%s AND session_id=%s',
+                           (self.owner, 'trip'))
+            self.assertEqual(cursor.fetchone()['count'], 0)
 
     def test_core_reset_does_not_expose_orphan_photos(self):
         self.repo.save_media(self.owner, 'trip', self.turn, self.media)

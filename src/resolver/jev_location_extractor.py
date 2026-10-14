@@ -102,8 +102,8 @@ class JevLocationExtractor:
                       for name in self.candidates(query)]
         choices = {f"place_{index}": name for index, name in enumerate(candidates)}
         criteria = {
-            "no_location": "No geographic destination: unscoped image similarity (including 'Tìm nơi giống ảnh này'), generic beaches/photos, or places only as origins/exclusions/analogies/supplied text. Translation/grammar/creative writing belong here unless travel retrieval is ALSO requested.",
-            "ambiguous": "Several separate destinations, uncertain namesakes, near me, or an unresolved there/this place reference (including 'What attractions are there?'). Clarification is required.",
+            "no_location": "No geographic destination: open destination discovery without a named country/region (recommend somewhere with beautiful beaches), unscoped image similarity (including 'Tìm nơi giống ảnh này'), generic beaches/photos, or places only as origins/exclusions/analogies/supplied text. Continue retrieval for discovery; a city is not required. Translation/grammar/creative writing belong here unless travel retrieval is ALSO requested.",
+            "ambiguous": "Uncertain namesakes, near me, an unresolved there/this place reference (including 'What attractions are there?'), or several separately requested geographic scopes that cannot be selected. A country-wide recommendation or request for help choosing a city is NOT ambiguous. Do not ask a discovery user to choose a city before retrieval.",
             "unknown_destination": "A destination is requested but none of the catalog candidates identifies it. Do not choose a similar place.",
             **{key: f"The user requests travel/search evidence for the proper geographic destination {name}. It is not a generic travel topic/common word, origin, excluded PLACE, analogy or writing/translation content. Ignoring an attached photo does not exclude a named destination." for key, name in choices.items()},
         }

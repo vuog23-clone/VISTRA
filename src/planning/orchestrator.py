@@ -5,7 +5,7 @@ from datetime import timedelta
 import re
 
 from src.schema.planning import (TripRequest, ToolAction, ToolResult, Itinerary, PlanningReport,
-    ValidationIssue, duration_from_text)
+    ValidationIssue, ClarificationChoice, duration_from_text, revision_days_from_text, revision_scope)
 from src.schema.weather import iso_date
 from src.planning.notebook import Notebook
 from src.planning.tools import TravelTools
@@ -46,22 +46,30 @@ def clarification(request, previous, action, revision_day, query, *, countries=(
         return ('Bạn muốn ghé những thành phố nào? Chưa có công cụ tự chọn thành phố cho cả quốc gia.'
                 if vi else 'Which destination cities should I include? Automatic city selection for an entire country is not connected yet.')
     if action == 'revise_itinerary' and previous is None:
-        return 'Bạn muốn tạo lịch trình cho địa điểm nào và bao nhiêu ngày?' if vi else 'There is no saved itinerary in this chat yet. Where and for how many days should I create one?'
+        return 'Mình chưa thấy lịch trình trong cuộc trò chuyện này. Bạn muốn đi đâu và ở lại bao lâu để mình tạo một lịch trình?' if vi else 'I don’t see a saved itinerary in this chat yet. Let’s start one — where would you like to go, and how long will you stay?'
     if request.start_date and request.end_date and iso_date(request.start_date) > iso_date(request.end_date):
-        return 'Ngày kết thúc trước ngày bắt đầu. Bạn muốn dùng khoảng ngày nào?' if vi else 'The end date is before the start date. Which date range should I use?'
+        return 'Ngày về đang sớm hơn ngày đi. Bạn muốn dùng ngày đi và ngày về nào?' if vi else 'Your return date is earlier than your arrival date. What arrival and return dates should I use?'
     if not request.destinations or not request.duration_days:
         if not request.destinations and not request.duration_days:
-            return 'Bạn muốn đi đâu và trong bao nhiêu ngày?' if vi else 'Where would you like to go, and for how many days?'
-        return ('Bạn muốn đi đâu?' if vi else 'Which destination should the itinerary cover?') if not request.destinations else (
-            'Chuyến đi kéo dài bao nhiêu ngày?' if vi else 'How many days should the itinerary cover?')
+            return 'Bạn muốn đi đâu và ở lại bao lâu? Chỉ cần trả lời như “Phú Quốc, 4 đêm”.' if vi else 'Where would you like to go, and how long will you stay? Something like “Phu Quoc, 4 nights” is enough.'
+        return ('Bạn muốn đi đâu?' if vi else 'Where would you like to go?') if not request.destinations else (
+            'Bạn sẽ ở lại bao lâu? Bạn có thể trả lời bằng số ngày hoặc số đêm.' if vi else 'How long will you stay? You can reply with days or nights — I’ve kept your other details.')
     if request.start_date and request.end_date and (iso_date(request.end_date)-iso_date(request.start_date)).days+1 != request.duration_days:
-        return 'Ngày đi và số ngày chưa khớp. Bạn muốn dùng khoảng ngày hay số ngày nào?' if vi else 'The date range and trip duration conflict. Which dates or duration should I use?'
-    if revision_day and previous and revision_day > len(previous.days):
+        start, end = iso_date(request.start_date), iso_date(request.end_date)
+        days = (end-start).days+1
+        shorter_end = (start+timedelta(days=request.duration_days-1)).isoformat()
+        return (f'{request.start_date} đến {request.end_date} là {days} ngày, {days-1} đêm. '
+                f'Bạn muốn giữ các ngày này hay đi {request.duration_days} ngày, đến {shorter_end}? '
+                'Chỉ cần trả lời bằng số ngày hoặc số đêm; mình đã giữ các thông tin khác.' if vi else
+                f'{request.start_date} to {request.end_date} is {days} days and {days-1} nights. '
+                f'Would you like to keep those dates, or make it {request.duration_days} days, ending {shorter_end}? '
+                'Just reply with days or nights — I’ve kept your other trip details.')
+    if previous and any(day < 1 or day > len(previous.days) for day in revision_scope(revision_day)):
         return 'Lịch trình chưa có ngày này. Bạn muốn sửa ngày nào?' if vi else 'The saved itinerary does not have that day. Which day should I revise?'
     return None
 
 
-def render_itinerary(plan, report, notebook, query):
+def render_itinerary(plan, report, notebook, query, request=None):
     vi = query_language(query) == 'vi'
     def label(en, vn):
         return vn if vi else en
@@ -87,7 +95,32 @@ def render_itinerary(plan, report, notebook, query):
             for choice in selected:
                 record = records[choice.evidence_id]
                 schedule = f" ({label('suggested', 'dự kiến')} {choice.start_time}–{choice.end_time})" if choice.start_time and choice.end_time else ''
+                if record.provider == 'OpenRouteService':
+                    schedule += f" · ~{record.duration_minutes} {label('min', 'phút')} · {record.mode} (OpenRouteService {label('estimate', 'ước tính')})"
                 blocks.append(f"- **{heading}:** {literal(record.name)}{schedule} [{record.evidence_id}]")
+        if request:
+            from math import ceil
+            from src.planning.validation import minutes
+            from src.service.routing_service import route_for_pair
+            timed = sorted((minutes(choice.start_time), minutes(choice.end_time), choice.evidence_id)
+                           for kind, choice in day.choices() if kind in ('restaurant', 'attraction')
+                           and choice.start_time and choice.end_time)
+            estimates = []
+            for before, after in zip(timed, timed[1:]):
+                route = route_for_pair(notebook, records[before[2]], records[after[2]], request)
+                if route:
+                    source_id, matrix, seconds, meters = route
+                    estimates.append(f"- {literal(records[before[2]].name)} → {literal(records[after[2]].name)}: "
+                                     f"~{ceil(seconds/60)} {label('min', 'phút')} · {meters/1000:.1f} km · {matrix.mode} [{source_id}]")
+            if estimates:
+                blocks.append(label('**Estimated travel between stops**', '**Ước tính di chuyển giữa các điểm**'))
+                blocks.extend(estimates)
+    matrices = [entry for entry in notebook.entries if entry.route_matrix]
+    if matrices:
+        blocks.append(label('Route times are OpenRouteService estimates, without live traffic or fares.',
+                            'Thời gian di chuyển là ước tính OpenRouteService, không có giao thông trực tiếp hay giá cước.'))
+        blocks.extend(f'OpenRouteService · {entry.route_matrix.mode} · {entry.route_matrix.fetched_at} [{entry.entry_id}]'
+                      for entry in matrices)
     for entry in notebook.entries:
         if entry.weather:
             weather = entry.weather
@@ -121,6 +154,10 @@ class TravelOrchestrator:
 
     def run(self, query, request, *, previous=None, action='create_itinerary', revision_day=None,
             search_service=None, weather_tool=None, limit=20, route=None, include_weather=None, on_progress=None):
+        if action == 'revise_itinerary':
+            days = revision_days_from_text(query)
+            if days:
+                revision_day = next(iter(days)) if len(days) == 1 else frozenset(days)
         notebook, trace = Notebook(city_count=max(1, len(request.destinations)),
                                    duration_days=request.duration_days or 1), []
         def report(step, title, status='running', **data):
@@ -135,14 +172,26 @@ class TravelOrchestrator:
                      for name in (country, data['country_code'], *data.get('aliases', []))}
         question = clarification(request, previous, action, revision_day, query, countries=countries)
         if question:
+            options = []
+            if (request.start_date and request.end_date and request.duration_days and request.destinations
+                    and not any(LocationResolver._normalize(city) in countries for city in request.destinations)
+                    and not (action == 'revise_itinerary' and previous is None)):
+                count = (iso_date(request.end_date)-iso_date(request.start_date)).days+1
+                if 1 <= count <= 14 and count != request.duration_days:
+                    vi = query_language(query) == 'vi'
+                    options = [ClarificationChoice(label=f'{count} ngày · {count-1} đêm' if vi else f'{count} days · {count-1} nights', reply=f'{count} ngay' if vi else f'{count} days'),
+                        ClarificationChoice(label=f'{request.duration_days} ngày · {request.duration_days-1} đêm' if vi else f'{request.duration_days} days · {request.duration_days-1} nights',
+                                            reply=f'{request.duration_days} ngay' if vi else f'{request.duration_days} days')]
+            pending_action = 'create_itinerary' if action == 'revise_itinerary' and previous is None else action
             return {'answer': question, 'pipeline_status': 'needs_clarification', 'generation_status': 'planning_clarification',
                     'context': None, 'retrieval': None, 'itinerary': None,
-                    'planning': PlanningReport(status='needs_clarification', action=action).model_dump()}
+                    'planning': PlanningReport(status='needs_clarification', action=pending_action,
+                                               clarification_options=options).model_dump()}
         report('planning_details', 'Trip requirements are ready', 'done')
         with ExitStack() as resources:
             tools = self.tools or TravelTools(request, query, resources=resources, config=self.config,
                 search_service=search_service, weather_tool=weather_tool, limit=limit, route=route,
-                include_weather=include_weather, on_progress=on_progress)
+                include_weather=include_weather, on_progress=on_progress, previous=previous)
             planner = self.planner
             if planner is None:
                 from src.planning.planner import Planner
@@ -152,17 +201,14 @@ class TravelOrchestrator:
             if include_weather is not False and self.config.get('weather_enabled', True):
                 required.extend(('WeatherSearch', city) for city in request.destinations)
             if request.origin and 'no_flight' not in request.transport_constraints and request.transport_mode not in ('driving', 'taxi', 'walking'):
-                from src.resolver.location_resolver import LocationResolver
                 origin = LocationResolver._normalize(request.origin)
                 if origin != LocationResolver._normalize(request.destinations[0]):
                     required.append(('FlightSearch', request.destinations[0]))
                 if origin != LocationResolver._normalize(request.destinations[-1]):
                     required.append(('FlightSearch', request.origin))
             attempted, signatures, repetitions, bad_actions = set(), set(), 0, 0
-            maximum = self.config.get('planning_max_steps', 20)
-            # Mandatory tool attempts are finite. More cities need more attempts but
-            # never exceed the validated absolute step bound.
-            maximum = min(24, maximum)
+            collection_issues = []
+            maximum = min(24, self.config.get('planning_max_steps', 20))
             for step in range(maximum):
                 remaining = [pair for pair in required if pair not in attempted]
                 report('planning_select', 'Choose the next planning tool')
@@ -182,12 +228,6 @@ class TravelOrchestrator:
                         break
                     selected = ToolAction(tool=remaining[0][0], city=remaining[0][1])
                 city = selected.city or request.destinations[0]
-                if selected.tool == 'WeatherSearch' and city in request.destinations and ('GuideSearch', city) not in attempted:
-                    # Forecast coordinates must come from this city's guide,
-                    # even if the model selects weather before its guide.
-                    selected = ToolAction(tool='GuideSearch', city=city)
-                signature = (selected.tool, city)
-                call_signature = (selected.tool, city, selected.origin, selected.destination, selected.departure_date, selected.mode)
                 allowed = set(request.destinations + ([request.origin] if request.origin else []))
                 valid_city = city in request.destinations or (selected.tool in ('FlightSearch', 'DistanceMatrix') and city == request.origin)
                 route_scope = (selected.origin is None or selected.origin in allowed) and (selected.destination is None or selected.destination in allowed)
@@ -204,6 +244,22 @@ class TravelOrchestrator:
                     if bad_actions >= 2:
                         break
                     continue
+                if selected.tool == 'WeatherSearch' and city in request.destinations and ('GuideSearch', city) not in attempted:
+                    selected = ToolAction(tool='GuideSearch', city=city)
+
+                def routing_prerequisites(selection, location):
+                    if selection.tool == 'DistanceMatrix' and self.config.get('planning_data_mode', 'vistra') == 'vistra':
+                        dependencies = [('GuideSearch', destination) for destination in request.destinations]
+                        dependencies.extend((tool, location) for tool in ('AttractionSearch', 'RestaurantSearch', 'AccommodationSearch')
+                                            if location in request.destinations)
+                        missing = next((pair for pair in dependencies if pair not in attempted), None)
+                        if missing:
+                            return ToolAction(tool=missing[0], city=missing[1]), missing[1]
+                    return selection, location
+
+                selected, city = routing_prerequisites(selected, city)
+                signature = (selected.tool, city)
+                call_signature = (selected.tool, city, selected.origin, selected.destination, selected.departure_date, selected.mode)
                 if call_signature in signatures:
                     repetitions += 1
                     if repetitions >= 2:
@@ -212,6 +268,8 @@ class TravelOrchestrator:
                     if remaining:
                         signature = remaining[0]
                         selected, city = ToolAction(tool=signature[0], city=signature[1]), signature[1]
+                        selected, city = routing_prerequisites(selected, city)
+                        signature = (selected.tool, city)
                         call_signature = (selected.tool, city, None, None, None, None)
                     else:
                         break
@@ -220,6 +278,8 @@ class TravelOrchestrator:
                 report('planning_tool', f'Run {selected.tool}', tool=selected.tool)
                 try:
                     options = {'action': selected} if any((selected.origin, selected.destination, selected.departure_date, selected.mode)) else {}
+                    if selected.tool == 'DistanceMatrix' and isinstance(tools, TravelTools):
+                        options['notebook'] = notebook.data
                     result = ToolResult.model_validate(tools.run(selected.tool, city, **options))
                     if result.tool != selected.tool or result.city != city:
                         raise ValueError('Tool result does not match its requested identity.')
@@ -227,13 +287,27 @@ class TravelOrchestrator:
                     result = ToolResult(tool=selected.tool, city=city, status='unavailable',
                                         note='The tool could not supply validated evidence. No records were inferred.')
                 report('planning_tool', f'{selected.tool} finished', 'done', tool=selected.tool, tool_status=result.status)
-                entry = notebook.write(result)
-                count = f'{len(entry.weather.days)} forecast days' if entry.weather else f'{len(entry.records)} records'
+                try:
+                    entry = notebook.write(result)
+                except ValueError:
+                    # A large observation must not crash an otherwise usable turn.
+                    try:
+                        entry = notebook.write(ToolResult(tool=selected.tool, city=city, status='unavailable',
+                            note='The tool observation could not fit the bounded evidence notebook.'))
+                    except ValueError:
+                        collection_issues.append(ValidationIssue(severity='unknown', constraint='evidence_budget',
+                            message=f'{selected.tool} ({city}) could not be retained within the evidence budget.'))
+                        trace.append('NotebookWrite: evidence budget reached; stopped collection.')
+                        report('planning_notebook', 'Evidence notebook reached its size limit', 'error')
+                        break
+                count = (f'{len(entry.weather.days)} forecast days' if entry.weather else
+                         f'{len(entry.route_matrix.locations)} route locations' if entry.route_matrix else f'{len(entry.records)} records')
                 trace.extend([f'{selected.tool} ({city}): {entry.status}, {count}', f'NotebookWrite: {entry.entry_id}'])
                 report('planning_notebook', 'Save tool evidence to the planning notebook', 'done', entry=entry.entry_id)
             report('planning_plan', 'Build itinerary from the evidence notebook')
             plan, issues, known_cost, currency, repairs = None, [], None, None, 0
-            for attempt in range(self.config.get('planning_max_repairs', 1)+1):
+            max_repairs = self.config.get('planning_max_repairs', 1)
+            for attempt in range(max_repairs+1):
                 try:
                     plan = Itinerary.model_validate(planner.run(query, request, notebook.data,
                         previous=previous, revision_day=revision_day, draft=plan,
@@ -248,10 +322,11 @@ class TravelOrchestrator:
                         message=f'The planner did not produce a valid structured itinerary ({type(error).__name__}).')]
                 if not any(issue.severity == 'error' for issue in issues):
                     break
-                if attempt < self.config.get('planning_max_repairs', 1):
+                if attempt < max_repairs:
                     repairs += 1
                     report('planning_repair', 'Repair itinerary constraint violations')
             errors = any(issue.severity == 'error' for issue in issues)
+            issues.extend(collection_issues)
             # Unavailable tool observations remain visible even if the planner
             # omits their components. They can never yield a verified full trip.
             for entry in notebook.data.entries:
@@ -267,7 +342,7 @@ class TravelOrchestrator:
                 repair_attempts=repairs, known_cost=known_cost, currency=currency)
             if not errors and plan is not None:
                 plan = bind_sources(plan, notebook.data)
-                answer = render_itinerary(plan, validation, notebook.data, query)
+                answer = render_itinerary(plan, validation, notebook.data, query, request)
             else:
                 plan = None
                 vi = query_language(query) == 'vi'

@@ -1,0 +1,9 @@
+# Adaptive TravelPlanner flow restored — October 14, 2026
+
+Restored the pre-optimization LLM selection loop. An initial guide supplies evidence, then `Planner.next_action` receives the trip request, current notebook observations and remaining required tools. Its action is checked, executed and written to the notebook before the next selection. Structured planning and validation follow. Scope checks, tool dependencies, repetition/step limits, selection fallback, configured bounded repairs, memory, weather, ORS routing and scoped edits remain available. The fixed scheduler was removed.
+
+Both the developer API image and existing local demo server were reloaded. Older deterministic optimization and verification reports are marked historical; their two-call figures do not describe the restored flow.
+
+Verification: API suite **57 passed, 8 opt-in checks skipped**; local demo suite **25 passed**; a real HTTP itinerary-and-edit integration test **passed** in 164.99 seconds, including first-use model loading. This is **83 executed passing checks**. The live test created a sourced three-day Hanoi plan with weather, then moved only day 2 dinner to 19:00–20:00, retained venue identities and days 1/3, and verified the saved itinerary, version and messages in PostgreSQL. Its temporary user was deleted afterward.
+
+The new orchestration tests verify actual adaptive selection of an optional tool, transmission of notebook observations to the provider adapter, routing prerequisites, rejection of out-of-scope actions, repetition limits, unavailable tools, weather controls, step budgets, configured repair limits, code repairs and protected-day edits. API and local demo health checks passed after reload. ORS timed out during the live test; route facts stayed unverified and partial plans were accepted only without validation errors.

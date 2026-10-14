@@ -37,12 +37,34 @@ place discovery, weather questions and factual travel questions; use 'answer'
 for other conversation or personal-memory operations. A question about an
 itinerary's meaning is not a request to create one. Set revision_day only when
 the user explicitly limits edits to one numbered day; otherwise leave it null.
+Destination discovery needs action='search' even before a city is chosen.
+"Recommend beautiful beach destinations in Vietnam" needs retrieval, not
+trip-detail clarification. Keep a named country/region in trip_state.destination
+using its geographic name (Vietnam, not "Vietnam (beach destinations)");
+destinations still contains explicit trip cities only. Put beaches and other
+interests in goal/requirements. Do not invent a city from assistant suggestions.
+If the user responds "suggest me please", "recommend somewhere", or "gợi ý
+giúp tôi" after a location question, resolve the earlier discovery request:
+standalone_query must retain the user's country/region, interests and exclusions.
+An assistant's demand for a city is not a new user requirement. Do not rewrite
+that follow-up into another request for clarification or a generic greeting.
+Recommend candidates before asking optional dates, duration or budget; these
+fields are needed for an itinerary, not a destination shortlist.
 If trip_state.pending_planning_action is set and the latest message supplies
 the missing or corrected trip details, resume that action. A reply such as
 'three days' after a duration clarification should continue creation, not
 become an unrelated direct answer. Do not resume on greetings, factual questions
 or cancellation. itinerary_available=true means a saved plan exists even when
 its full details were omitted to fit the memory budget.
+Accept brief clarification answers without asking users to repeat the trip.
+For an overall stay, N nights means N+1 inclusive itinerary days. After a duration
+or date clarification, "4 nights at Duong Dong town" can correct an earlier
+3-day request to 5 days; retain the other known trip details. A lodging area within
+the existing destination is not a new trip destination. "Keep the dates" chooses
+the inclusive duration of the stated dates; "3 days" chooses that duration and,
+when a start is known, updates the end date. Remove superseded stay-length requirements.
+Do not make these corrections for questions, negations, separate side trips or
+ambiguous statements. Resolve only what the latest answer actually supplies.
 Set include_weather=false only when weather is explicitly excluded, true when
 requested, and null otherwise. Also store explicit weather choices in
 trip_state.include_weather and preserve them for later edits of the same trip.

@@ -70,6 +70,12 @@
     <section id="session-memory" role="tabpanel" aria-labelledby="tab-session"><div id="trip-details"></div><div class="memory-empty" id="session-memory-empty"><svg class="icon"><use href="#i-compass"/></svg><strong>A fresh page</strong><p>Your destination and trip details will appear as we talk.</p></div><div class="summary-block" id="summary-block" hidden><span class="section-label">THE CONVERSATION SO FAR</span><p id="conversation-summary"></p></div><button class="clear-chat" id="clear-chat" disabled><svg class="icon"><use href="#i-trash"/></svg>Clear this chat’s history</button><p class="memory-footnote">Your saved preferences stay with you.</p></section>
     <section id="longterm-memory" role="tabpanel" aria-labelledby="tab-longterm" hidden><div id="preference-list"></div><div class="memory-empty" id="longterm-memory-empty"><svg class="icon"><use href="#i-leaf"/></svg><strong>Start with what you love</strong><p>Say “remember that I prefer…” to save a preference for future chats.</p></div><p class="memory-footnote">Change your mind? Tell me, or remove a saved detail here.</p></section>
   </aside>
+  <dialog class="delete-dialog" id="delete-chat-dialog" aria-labelledby="delete-chat-title" aria-describedby="delete-chat-description">
+    <h2 id="delete-chat-title">Delete this conversation?</h2>
+    <p class="delete-chat-name" id="delete-chat-name"></p>
+    <p id="delete-chat-description">Its messages, trip details, and saved results will be removed. This cannot be undone. Your long-term preferences will stay.</p>
+    <div class="delete-dialog-actions"><button type="button" id="delete-chat-cancel" autofocus>Keep conversation</button><button type="button" class="delete-confirm" id="delete-chat-confirm">Delete conversation</button></div>
+  </dialog>
   <div class="toast" id="toast" role="status" hidden></div>
 </body>
 </html>

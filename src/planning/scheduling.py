@@ -1,10 +1,12 @@
 """Repair proposed schedules with current venue evidence; never infer route times."""
 
 from datetime import timedelta
+from math import ceil
 
 from src.planning.validation import minutes, validate_itinerary
-from src.schema.planning import PlanChoice
+from src.schema.planning import PlanChoice, revision_scope
 from src.schema.weather import iso_date
+from src.service.routing_service import route_for_pair
 
 
 def opening_intervals(record, date):
@@ -44,14 +46,17 @@ def repair_schedule(plan, request, notebook, *, previous=None, revision_day=None
     """Try one finite assignment/schedule repair, then apply all normal checks."""
     issues = validate_itinerary(plan, request, notebook, previous=previous, revision_day=revision_day)[0]
     errors = [item for item in issues if item.severity == 'error']
-    repairable = {'schedule', 'time_overlap', 'opening_hours', 'diversity', 'complete_information'}
+    repairable = {'schedule', 'time_overlap', 'opening_hours', 'diversity', 'complete_information', 'transport_time'}
     if not errors or any(item.constraint not in repairable for item in errors):
         return None
+    route_errors = any(item.constraint == 'transport_time' for item in errors)
+    from src.planning.planner import planning_candidates
     repaired, records = plan.model_copy(deep=True), notebook.records()
-    used = {item.entity_id for day in previous.days if day.day != revision_day
-            for kind, item in day.choices() if kind in ('restaurant', 'attraction')} if previous and revision_day else set()
+    scope = revision_scope(revision_day)
+    used = {item.entity_id for day in previous.days if day.day not in scope
+            for kind, item in day.choices() if kind in ('restaurant', 'attraction')} if previous and scope else set()
     for day in repaired.days:
-        if previous and revision_day and day.day != revision_day:
+        if previous and scope and day.day not in scope:
             continue
         activities = []
         for slot, target, earliest, latest, duration in (('breakfast',480,360,660,30),
@@ -78,19 +83,29 @@ def repair_schedule(plan, request, notebook, *, previous=None, revision_day=None
             length = (minutes(choice.end_time) or 0)-(target or 0)
             duration = max(length if length > 0 else 60, record.duration_minutes or 0)
             activities.append((target if target is not None else 360,0,1439,duration,'transport',choice))
-        finish = 0
+        finish, previous_record, previous_kind = 0, None, None
         for target, earliest, latest, duration, kind, choice in sorted(activities, key=lambda item:item[0]):
             original = records.get(choice.evidence_id)
             if original is None:
                 return None
-            candidates = [original] if kind == 'transport' or preserve_venues else [original, *[record for record in records.values()
-                if record.kind == kind and record.city == day.city and record.entity_id != original.entity_id]]
+            candidates = [original] if kind == 'transport' or preserve_venues else [original, *[record
+                for record in planning_candidates(notebook, request, kind, city=day.city) if record.entity_id != original.entity_id]]
             for record in candidates:
                 if kind != 'transport' and record.entity_id in used:
                     continue
-                # A short gap is proposed schedule spacing, not a claim about
-                # actual travel duration. Validation continues to flag routes.
-                slot = proposed_slot(record, day.date, target, max(earliest,finish+15 if finish else 0), latest, duration)
+                if route_errors and kind != 'transport' and record.entity_id != original.entity_id:
+                    if route_for_pair(notebook, original, original, request) and not route_for_pair(notebook, record, record, request):
+                        continue
+                # Without a route, 15 minutes is only suggested spacing. Known
+                # ORS durations must fit, and all normal checks still run below.
+                gap = 15
+                if previous_record and previous_kind != 'transport' and kind != 'transport':
+                    route = route_for_pair(notebook, previous_record, record, request)
+                    if route_errors and route is None and route_for_pair(notebook, previous_record, original, request):
+                        continue
+                    if route:
+                        gap = max(gap, ceil(route[2]/60))
+                slot = proposed_slot(record, day.date, target, max(earliest,finish+gap if finish else 0), latest, duration)
                 if slot is None:
                     continue
                 start, finish = slot
@@ -99,6 +114,7 @@ def repair_schedule(plan, request, notebook, *, previous=None, revision_day=None
                 choice.end_time = f'{finish//60:02}:{finish%60:02}'
                 if kind != 'transport':
                     used.add(record.entity_id)
+                previous_record, previous_kind = record, kind
                 break
             else:
                 return None

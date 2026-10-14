@@ -133,12 +133,18 @@ def load_config() -> dict:
     for key in ("models_local_files_only", "image_normalize"):
         if type(config[key]) is not bool:
             raise ValueError(f"Config {key} must be a boolean.")
-    for key in ("jev_routing_enabled", "jev_response_routing_enabled", "weather_enabled", "planning_enabled"):
+    for key in ("jev_routing_enabled", "jev_response_routing_enabled", "weather_enabled", "planning_enabled", "ors_enabled"):
         if key in config and type(config[key]) is not bool:
             raise ValueError(f"Config {key} must be a boolean.")
     timeout = config.get('weather_timeout_seconds', 8.0)
     if type(timeout) not in (int, float) or not isfinite(timeout) or not 0 < timeout <= 15:
         raise ValueError('Weather timeout must be between 0 and 15 seconds.')
+    timeout = config.get('ors_timeout_seconds', 8.0)
+    if type(timeout) not in (int, float) or not isfinite(timeout) or not 0 < timeout <= 15:
+        raise ValueError('Routing timeout must be between 0 and 15 seconds.')
+    maximum = config.get('ors_max_locations', 12)
+    if type(maximum) is not int or not 2 <= maximum <= 16:
+        raise ValueError('Routing location limit must be from 2 to 16.')
     if config.get('planning_data_mode', 'vistra') not in ('vistra', 'benchmark'):
         raise ValueError('Planning data mode must be vistra or benchmark.')
     for key, minimum, maximum in (('planning_max_steps', 1, 24), ('planning_max_repairs', 0, 2)):
