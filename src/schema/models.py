@@ -71,6 +71,9 @@ class SearchResponse:
     location: str | None = None
     location_status: str = ""
     requested_categories: list[str] = field(default_factory=list)
+    excluded_categories: list[str] = field(default_factory=list)
+    requested_place_ids: list[str] | None = None
+    excluded_place_ids: list[str] = field(default_factory=list)
     retrieval_status: str = ""
     branch_status: dict[str, str] = field(default_factory=dict)
     retrieval_warnings: list[str] = field(default_factory=list)

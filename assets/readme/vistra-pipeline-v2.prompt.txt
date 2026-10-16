@@ -1,0 +1,113 @@
+Use case: infographic-diagram.
+Create a NEW VISTRA pipeline diagram. The attached image is ONLY a visual style reference. Use the same pastel cyan and pale yellow rounded panels, lavender headers, navy outlines, friendly illustrated icons, blue evidence arrows, orange planning arrows, purple memory loop, and clean white background. High resolution wide landscape, readable English typography. Redesign the contents with the simpler, technically accurate layout specified here. Do not reproduce reference-image connections.
+
+TITLE: "VISTRA: From User Query to Final Output"
+SUBTITLE: "Conversation memory • Grounded answers • Evidence-based itinerary planning"
+
+FOUR COLUMNS with these lavender headers:
+"1  Memory & Intent"
+"2  Collect What Each Path Needs"
+"3  Build & Check the Response"
+"4  Save & Deliver"
+
+CRITICAL LAYOUT: Columns 2 and 3 form THREE HORIZONTAL SWIMLANES, aligned row by row: Direct at top, Q&A in middle, Planning at bottom. Column 1's routing card fans out to the three rows. Every row has exactly ONE horizontal connector from column 2 to its matching row in column 3. Every row in column 3 connects to the same Output safety card in column 4. No connectors may jump from one response row to another. Use a sufficiently tall canvas so the planning row is large enough. All labels must be readable. No spaghetti connectors.
+
+COLUMN 1 pale cyan:
+A User Query speech bubble above, with "Plan 3 relaxed days in Hanoi".
+Straight downward sequence of illustrated cards:
+"Validate input"
+"Safety • Request limits"
+then
+"Conversation memory"
+"Recent turns • Summary • Trip state"
+"Durable preferences"
+"PostgreSQL"
+then
+"Interpret this turn"
+"Intent • Requirements • Edit scope"
+then
+"Route the request"
+"Direct / Q&A / Create or revise"
+Its three outputs fan to the three rows of column 2. Blue for Direct and Q&A, orange for Planning.
+Small informational note at bottom, NO ARROW: "Explicit memory updates can return an acknowledgement without generation."
+
+COLUMN 2: shared needs for each path, with three separated rounded groups:
+TOP DIRECT ROW, pale blue, label "Direct"
+"Conversation context"
+"No indexed evidence needed"
+MIDDLE Q&A ROW, pale cyan, label "Grounded Q&A"
+"Resolve destination & filters"
+then illustrated database group:
+"Qdrant: guide text + photos"
+"Voyage dense + BM25 • SigLIP"
+then
+"PostgreSQL place metadata"
+"Filter • Enrich • Distance rank"
+Small note: "Hybrid vector searches run in parallel"
+BOTTOM PLANNING ROW, pale yellow, label "Itinerary planning"
+"Check destination cities + duration"
+"Dates optional; clarify conflicts"
+then a tools card:
+"GuideSearch"
+"AttractionSearch • RestaurantSearch"
+"AccommodationSearch"
+"WeatherSearch · Open-Meteo"
+"DistanceMatrix · OpenRouteService"
+Tiny subtitle: "Optional walking / driving estimates"
+Then an illustrated notebook card:
+"Evidence Notebook"
+"Bounded tool loop → NotebookWrite"
+"Indexed facts + explicit unknowns"
+Small note: "Venue tools can query PostgreSQL directly"
+Small note: "No live flights or booking availability"
+
+COLUMN 3, three matching rounded row groups:
+TOP DIRECT ROW:
+"Direct LLM answer"
+"Safety & response-format checks"
+"One repair or explicit limitation"
+MIDDLE Q&A ROW:
+"Grounded answer draft"
+"Format & citation checks"
+"Semantic grounding review"
+"One repair for violations"
+"Failed / unavailable review → limitation"
+BOTTOM PLANNING ROW:
+Three vertically stacked cards, joined by simple downward orange arrows:
+"Structured Planner"
+"Evidence IDs → Daily itinerary"
+then
+"Build schedule"
+"Bounded search • Hours • Travel gaps"
+then
+"Validate itinerary"
+"Sources • Dates • Budget • Edit scope"
+An orange loop from Validate itinerary back to Structured Planner labeled "Bounded repair".
+Below validation, three small side-by-side status badges:
+"Verified" / "Checks passed"
+"Partial" / "Unknown facts listed"
+"Failed" / "No new itinerary"
+Small note: "Failed edits retain the previous saved plan"
+
+COLUMN 4 pale cyan:
+"Output safety"
+"Safe content • Source boundaries"
+then straight down arrow to:
+"Save completed turn"
+"Messages • Summary • Trip state"
+"Explicit preference changes"
+"Atomic PostgreSQL commit"
+then straight down arrow to an illustrated browser card:
+"Browser SSE / API JSON"
+"Answer or itinerary"
+"Sources & place cards"
+"Weather & validation status"
+"Saved-session reload • Follow-up edits"
+Small note: "SSE: stage progress + final result"
+
+CLARIFICATION: Put a small separate PURPLE speech card below the panel-2 trip-details card with text "Missing or conflicting details? Ask for clarification". Use a short purple branch from Check destination cities + duration into this speech card. Use NO connector through the tools group or into column 3. A separate purple line routed around the OUTSIDE top of all panels from this speech card toward User Query is labeled "Clarification → next user reply". This means no Q&A-to-planning arrow.
+MEMORY: A purple feedback loop from Save completed turn, around the OUTSIDE bottom edge, to the Conversation memory card in column 1. The arrowhead must point INTO Conversation memory. Label "Memory for the next turn".
+
+Footer: "Current implementation • October 2026 • Indexed data and optional providers have availability limits"
+Legend: "Blue: conversation / evidence" "Orange: planning / repair" "Purple: follow-up / memory"
+All text is explicit copy. Do not add providers or claims. Do not draw any arrow from memory acknowledgement to planning. Do not link Q&A to trip-details checking. Do not make general retrieval a mandatory prerequisite for planning. Keep each row's connector strictly horizontal and joined to its matching row only. Exact technical labels matter.

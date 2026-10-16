@@ -1,0 +1,436 @@
+{
+  "status": "completed",
+  "catalog_path": "gpt-4.1-nano/catalog",
+  "summary": {
+    "catalog_cases": 600,
+    "accounted_cases": 600,
+    "executed_cases": 408,
+    "unsupported_cases": 192,
+    "outcomes": {
+      "completed": 408,
+      "unsupported": 192
+    },
+    "planned_turns": 716,
+    "attempted_turns": 510,
+    "turn_errors": 33,
+    "cases_with_turn_errors": 33,
+    "turn_errors_by_type": {
+      "ValidationError": 2,
+      "ValueError": 23,
+      "UnsafeInput": 8
+    },
+    "case_error_ids": [
+      "VB1-ROUTE-115-en",
+      "VB1-ROUTE-134-en",
+      "VB1-ROUTE-135-vi",
+      "VB1-MEM-101-en",
+      "VB1-MEM-103-en",
+      "VB1-MEM-105-en",
+      "VB1-MEM-106-en",
+      "VB1-MEM-107-en",
+      "VB1-MEM-108-en",
+      "VB1-MEM-111-en",
+      "VB1-MEM-112-en",
+      "VB1-MEM-113-en",
+      "VB1-MEM-113-vi",
+      "VB1-MEM-114-en",
+      "VB1-MEM-115-en",
+      "VB1-MEM-115-vi",
+      "VB1-MEM-116-en",
+      "VB1-MEM-120-vi",
+      "VB1-MEM-141-en",
+      "VB1-MEM-142-en",
+      "VB1-MEM-144-en",
+      "VB1-MEM-148-en",
+      "VB1-MEM-148-vi",
+      "VB1-MEM-149-en",
+      "VB1-MEM-149-vi",
+      "VB1-PLAN-114-en",
+      "VB1-PLAN-149-en",
+      "VB1-PLAN-149-vi",
+      "VB1-FAIL-145-en",
+      "VB1-FAIL-145-vi",
+      "VB1-FAIL-146-en",
+      "VB1-FAIL-147-en",
+      "VB1-FAIL-147-vi"
+    ],
+    "automated_failure_ids": [
+      "VB1-MEM-101-en",
+      "VB1-MEM-101-vi",
+      "VB1-MEM-102-en",
+      "VB1-MEM-102-vi",
+      "VB1-MEM-103-en",
+      "VB1-MEM-103-vi",
+      "VB1-MEM-104-vi",
+      "VB1-MEM-105-en",
+      "VB1-MEM-105-vi",
+      "VB1-MEM-106-en",
+      "VB1-MEM-106-vi",
+      "VB1-MEM-112-vi",
+      "VB1-MEM-114-en",
+      "VB1-MEM-114-vi",
+      "VB1-MEM-119-vi",
+      "VB1-MEM-120-en",
+      "VB1-MEM-120-vi",
+      "VB1-MEM-122-en",
+      "VB1-MEM-125-en",
+      "VB1-MEM-125-vi",
+      "VB1-MEM-127-en",
+      "VB1-MEM-127-vi",
+      "VB1-MEM-128-en",
+      "VB1-MEM-128-vi",
+      "VB1-MEM-133-en",
+      "VB1-MEM-137-en",
+      "VB1-MEM-137-vi",
+      "VB1-MEM-141-en",
+      "VB1-MEM-141-vi",
+      "VB1-MEM-142-en",
+      "VB1-MEM-142-vi",
+      "VB1-PLAN-101-en",
+      "VB1-PLAN-105-en",
+      "VB1-PLAN-106-en",
+      "VB1-PLAN-106-vi",
+      "VB1-PLAN-107-vi",
+      "VB1-PLAN-109-en",
+      "VB1-PLAN-110-en",
+      "VB1-PLAN-110-vi",
+      "VB1-PLAN-112-vi",
+      "VB1-PLAN-136-vi",
+      "VB1-PLAN-137-en",
+      "VB1-PLAN-137-vi",
+      "VB1-PLAN-138-en",
+      "VB1-PLAN-138-vi",
+      "VB1-PLAN-145-en",
+      "VB1-PLAN-145-vi",
+      "VB1-ROUTE-101-en",
+      "VB1-ROUTE-101-vi",
+      "VB1-ROUTE-102-en",
+      "VB1-ROUTE-102-vi",
+      "VB1-ROUTE-103-en",
+      "VB1-ROUTE-103-vi",
+      "VB1-ROUTE-104-en",
+      "VB1-ROUTE-104-vi",
+      "VB1-ROUTE-105-en",
+      "VB1-ROUTE-106-vi",
+      "VB1-ROUTE-107-en",
+      "VB1-ROUTE-107-vi",
+      "VB1-ROUTE-108-en",
+      "VB1-ROUTE-108-vi",
+      "VB1-ROUTE-109-en",
+      "VB1-ROUTE-109-vi",
+      "VB1-ROUTE-110-en",
+      "VB1-ROUTE-111-en",
+      "VB1-ROUTE-111-vi",
+      "VB1-ROUTE-112-en",
+      "VB1-ROUTE-112-vi",
+      "VB1-ROUTE-113-en",
+      "VB1-ROUTE-113-vi",
+      "VB1-ROUTE-114-en",
+      "VB1-ROUTE-114-vi",
+      "VB1-ROUTE-115-en",
+      "VB1-ROUTE-115-vi",
+      "VB1-ROUTE-116-en",
+      "VB1-ROUTE-116-vi",
+      "VB1-ROUTE-117-en",
+      "VB1-ROUTE-117-vi",
+      "VB1-ROUTE-118-en",
+      "VB1-ROUTE-118-vi",
+      "VB1-ROUTE-119-en",
+      "VB1-ROUTE-120-en",
+      "VB1-ROUTE-120-vi",
+      "VB1-ROUTE-121-vi",
+      "VB1-ROUTE-122-en",
+      "VB1-ROUTE-122-vi",
+      "VB1-ROUTE-123-en",
+      "VB1-ROUTE-123-vi",
+      "VB1-ROUTE-124-en",
+      "VB1-ROUTE-124-vi",
+      "VB1-ROUTE-125-vi",
+      "VB1-ROUTE-128-en",
+      "VB1-ROUTE-128-vi",
+      "VB1-ROUTE-129-en",
+      "VB1-ROUTE-129-vi",
+      "VB1-ROUTE-130-en",
+      "VB1-ROUTE-130-vi",
+      "VB1-ROUTE-131-en",
+      "VB1-ROUTE-131-vi",
+      "VB1-ROUTE-132-en",
+      "VB1-ROUTE-132-vi",
+      "VB1-ROUTE-133-en",
+      "VB1-ROUTE-133-vi",
+      "VB1-ROUTE-134-en",
+      "VB1-ROUTE-134-vi",
+      "VB1-ROUTE-135-en",
+      "VB1-ROUTE-135-vi",
+      "VB1-ROUTE-136-en",
+      "VB1-ROUTE-136-vi",
+      "VB1-ROUTE-137-vi",
+      "VB1-ROUTE-139-en",
+      "VB1-ROUTE-139-vi",
+      "VB1-ROUTE-140-en",
+      "VB1-ROUTE-140-vi",
+      "VB1-ROUTE-141-en",
+      "VB1-ROUTE-141-vi",
+      "VB1-ROUTE-142-en",
+      "VB1-ROUTE-142-vi",
+      "VB1-ROUTE-143-vi",
+      "VB1-ROUTE-144-en",
+      "VB1-ROUTE-144-vi",
+      "VB1-ROUTE-145-en",
+      "VB1-ROUTE-145-vi",
+      "VB1-ROUTE-146-en",
+      "VB1-ROUTE-147-en",
+      "VB1-ROUTE-148-en",
+      "VB1-ROUTE-148-vi",
+      "VB1-ROUTE-149-en",
+      "VB1-ROUTE-149-vi",
+      "VB1-ROUTE-150-vi"
+    ],
+    "provider_calls": 1460,
+    "served_models": {
+      "gpt-4.1-nano-2025-04-14": 1458,
+      "unavailable": 2
+    },
+    "provider_usage": {
+      "input_tokens": 4880345,
+      "output_tokens": 174779,
+      "cached_input_tokens": 596480
+    },
+    "calls_missing_usage": 2,
+    "worker_wall_timing": {
+      "count": 408,
+      "median_seconds": 7.610794500000111,
+      "p95_seconds": 21.745888000000377
+    },
+    "sdk_call_timing": {
+      "count": 1460,
+      "median_seconds": 1.2695678999998563,
+      "p95_seconds": 3.424644000000171
+    },
+    "checks_by_track": {
+      "grounding": {
+        "unscored": 400
+      },
+      "memory": {
+        "fail": 34,
+        "unscored": 499,
+        "pass": 77
+      },
+      "planning": {
+        "fail": 21,
+        "unscored": 318,
+        "pass": 62
+      },
+      "reliability": {
+        "unscored": 282,
+        "pass": 46
+      },
+      "retrieval": {
+        "unscored": 308
+      },
+      "routing": {
+        "pass": 256,
+        "fail": 144,
+        "unscored": 308
+      }
+    },
+    "checks_by_language": {
+      "en": {
+        "pass": 224,
+        "fail": 98,
+        "unscored": 1055
+      },
+      "vi": {
+        "pass": 217,
+        "fail": 101,
+        "unscored": 1060
+      }
+    },
+    "check_counts": {
+      "pass": 441,
+      "fail": 199,
+      "unscored": 2115
+    },
+    "semantic_reviews_pending": 1118,
+    "overall_task_success_percent": null,
+    "monetary_cost": null,
+    "cleanup_failures": []
+  },
+  "requested_model": "gpt-4.1-nano",
+  "reasoning": "omitted: model has no reasoning parameter",
+  "token_cost": {
+    "model": "gpt-4.1-nano",
+    "currency": "USD",
+    "as_of": "2026-10-16",
+    "price_source": "https://developers.openai.com/api/docs/models/gpt-4.1-nano",
+    "cache_accounting_source": "https://developers.openai.com/api/docs/guides/prompt-caching",
+    "pricing_sha256": "4c46b7540402074f2efb1b2328a0eb27e1d79a4a35d41469e85561b4f727470a",
+    "estimated_known_usage_subtotal_usd": 0.5132101,
+    "estimated_total_usd": null,
+    "sdk_calls_observed": 1460,
+    "priceable_returned_usage_events": 1458,
+    "unpriceable_or_missing_usage_events": 2,
+    "interrupted_cases_with_possible_unreported_calls": [],
+    "reported_input_tokens": 4880345,
+    "reported_output_tokens": 174779,
+    "reported_cached_input_tokens": 596480,
+    "reported_cache_write_tokens": 0,
+    "reported_reasoning_tokens": 0,
+    "standard_tier_assumption_events": 0,
+    "cost_per_independently_reviewed_success_usd": null,
+    "preflight_included": false,
+    "invoice_verified": false,
+    "limitations": [
+      "Standard-rate estimate, not the provider invoice; tier assumptions are recorded.",
+      "Jev, local GPU/CPU, SDK-internal retries and unreported calls are not priced.",
+      "Cached and cache-write tokens are subsets of input; reasoning tokens are already part of output."
+    ]
+  },
+  "preflight_cost": {
+    "estimated_usd": 6.5e-06,
+    "input_usd": 4.1e-06,
+    "output_usd": 2.4e-06,
+    "tokens": {
+      "input": 41,
+      "output": 6,
+      "cached": 0,
+      "written": 0
+    },
+    "long_context_rate": false,
+    "standard_tier_assumed": true
+  },
+  "retrieval": {
+    "protocol": "vistra-actual-index-retrieval-1",
+    "catalog_cases": 100,
+    "executed_cases": 100,
+    "case_errors": 0,
+    "by_kind": {
+      "category": {
+        "cases": 50,
+        "errors": 0,
+        "raw": {
+          "precision_at_20": 0.506,
+          "precision_of_returned_at_20": 0.506,
+          "recall_at_20": 0.4212254255126655,
+          "recall_at_20_ceiling": 0.592649329286051,
+          "ndcg_at_10": 0.6949948089667871,
+          "hit_at_5": 0.9791666666666666,
+          "reciprocal_rank_at_20": 0.8329861111111111
+        },
+        "final": {
+          "precision_at_20": 0.682,
+          "precision_of_returned_at_20": 0.96,
+          "recall_at_20": 0.592649329286051,
+          "recall_at_20_ceiling": 0.592649329286051,
+          "ndcg_at_10": 1.0,
+          "hit_at_5": 1.0,
+          "reciprocal_rank_at_20": 1.0
+        },
+        "zero_result_cases": 2,
+        "wrong_city_results": 0,
+        "wrong_category_results": 0,
+        "wrong_identity_results": 0
+      },
+      "known_place": {
+        "cases": 30,
+        "errors": 0,
+        "raw": {
+          "precision_at_20": 0.011666666666666667,
+          "precision_of_returned_at_20": 0.011666666666666667,
+          "recall_at_20": 0.23333333333333334,
+          "recall_at_20_ceiling": 1.0,
+          "ndcg_at_10": 0.12260337280315202,
+          "hit_at_5": 0.13333333333333333,
+          "reciprocal_rank_at_20": 0.10231481481481482
+        },
+        "final": {
+          "precision_at_20": 0.05,
+          "precision_of_returned_at_20": 1.0,
+          "recall_at_20": 1.0,
+          "recall_at_20_ceiling": 1.0,
+          "ndcg_at_10": 1.0,
+          "hit_at_5": 1.0,
+          "reciprocal_rank_at_20": 1.0
+        },
+        "zero_result_cases": 0,
+        "wrong_city_results": 0,
+        "wrong_category_results": 0,
+        "wrong_identity_results": 0
+      },
+      "guide_section": {
+        "cases": 20,
+        "errors": 0,
+        "raw": {
+          "precision_at_20": 0.135,
+          "precision_of_returned_at_20": 0.16910714285714284,
+          "recall_at_20": 1.0,
+          "recall_at_20_ceiling": 1.0,
+          "ndcg_at_10": 0.6970337379573213,
+          "hit_at_5": 1.0,
+          "reciprocal_rank_at_20": 0.6666666666666667
+        },
+        "final": {
+          "precision_at_20": 0.135,
+          "precision_of_returned_at_20": 0.16910714285714284,
+          "recall_at_20": 1.0,
+          "recall_at_20_ceiling": 1.0,
+          "ndcg_at_10": 0.6970337379573213,
+          "hit_at_5": 1.0,
+          "reciprocal_rank_at_20": 0.6666666666666667
+        },
+        "zero_result_cases": 0,
+        "wrong_city_results": 0,
+        "wrong_category_results": 0,
+        "wrong_identity_results": 0
+      }
+    },
+    "by_language": {
+      "en": {
+        "cases": 50,
+        "errors": 0,
+        "category_final_metadata_precision": 0.96,
+        "guide_section_ndcg_at_10": 0.7555165818319635
+      },
+      "vi": {
+        "cases": 50,
+        "errors": 0,
+        "category_final_metadata_precision": 0.96,
+        "guide_section_ndcg_at_10": 0.6385508940826791
+      }
+    },
+    "pixel_relevance_scored": false,
+    "routing_scored": false,
+    "llm_generation_used": false,
+    "guide_context_section_hit_cases": 16,
+    "guide_context_section_hit_denominator": 20,
+    "card_wrong_city_count": 0,
+    "card_wrong_category_count": 0,
+    "photo_binding_violations": 0
+  },
+  "retrieval_input_fingerprints": {
+    "metadata": "bf512509b3705c81a04f47c8929d30d65c37638f019d88c8e475d6424d3e46ec",
+    "chunks": "8d42095d1609e2b5ed686b77e4ef04e7e1e8d4d4d203b0afb57b3546ddc644dc",
+    "cases": "6cec61b1d047430b17c4c41df9a4b70a2898b3ecb8f486b9b3c816cb3c0e6377",
+    "qrels": "b90fe4a5e559bbf816a5766ea371de3c213126911383293bed52007adbcd9f97",
+    "index": "e70deb4003fcdd76ca849876bed9d855d5ea7c85c026bdbf8c1d701eaf4d5610"
+  },
+  "retrieval_harness_hashes": {
+    "benchmarks/retrieval/__init__.py": "a51349df158e3a9c343251ed65f4a6ae4d94d20824436fc939132229c2351b10",
+    "benchmarks/retrieval/dataset.py": "5b739eae6c3d2d69b373c2ddfe504c3abef4395524f1e3caee7c87a74146a112",
+    "benchmarks/retrieval/metrics.py": "6da3326d6174b67d50d5989b9beadca938b5ce767c099cc67b71a7dde2e54a14",
+    "benchmarks/retrieval/run.py": "9dfa3d68b971dca44aad0275df3cc8a3653b615846cdbe94735a4077b98d6554",
+    "benchmarks/retrieval/test_metrics.py": "99f0401d3aed69f85a6fd05f6819fefda006bd41837e534b77ed1a84da774c49",
+    "benchmarks/scripts/evaluate_retrieval.py": "206d738465461873990aef9510afad68eab15370b200ef51f01055fc9a8f525d"
+  },
+  "retrieval_model_revisions": {
+    "text_embedding_model": [
+      "67fabc9bef010dabc5f6024aa1b1b6b93410426f"
+    ],
+    "image_embedding_model": [
+      "75de2d55ec2d0b4efc50b3e9ad70dba96a7b2fa2"
+    ],
+    "sparse_embedding_model": [
+      "22b8d2af71a76161e18dd432d2cee0eefa66e412"
+    ]
+  }
+}

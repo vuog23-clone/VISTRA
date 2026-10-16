@@ -1,0 +1,148 @@
+{
+  "catalog_cases": 600,
+  "accounted_cases": 600,
+  "executed_cases": 408,
+  "unsupported_cases": 192,
+  "outcomes": {
+    "completed": 408,
+    "unsupported": 192
+  },
+  "planned_turns": 716,
+  "attempted_turns": 510,
+  "turn_errors": 10,
+  "cases_with_turn_errors": 10,
+  "turn_errors_by_type": {
+    "UnsafeInput": 8,
+    "ValidationError": 2
+  },
+  "case_error_ids": [
+    "VB1-MEM-149-en",
+    "VB1-PLAN-110-en",
+    "VB1-PLAN-130-en",
+    "VB1-PLAN-149-en",
+    "VB1-PLAN-149-vi",
+    "VB1-FAIL-145-en",
+    "VB1-FAIL-145-vi",
+    "VB1-FAIL-146-en",
+    "VB1-FAIL-147-en",
+    "VB1-FAIL-147-vi"
+  ],
+  "automated_failure_ids": [
+    "VB1-MEM-104-en",
+    "VB1-MEM-104-vi",
+    "VB1-MEM-106-en",
+    "VB1-MEM-106-vi",
+    "VB1-MEM-110-vi",
+    "VB1-MEM-114-en",
+    "VB1-MEM-114-vi",
+    "VB1-MEM-117-en",
+    "VB1-MEM-117-vi",
+    "VB1-MEM-118-en",
+    "VB1-MEM-127-en",
+    "VB1-MEM-127-vi",
+    "VB1-MEM-128-en",
+    "VB1-MEM-128-vi",
+    "VB1-MEM-133-vi",
+    "VB1-PLAN-101-vi",
+    "VB1-PLAN-102-en",
+    "VB1-PLAN-102-vi",
+    "VB1-PLAN-105-en",
+    "VB1-PLAN-106-en",
+    "VB1-PLAN-107-vi",
+    "VB1-PLAN-109-en",
+    "VB1-PLAN-110-en",
+    "VB1-PLAN-112-en",
+    "VB1-PLAN-113-vi",
+    "VB1-PLAN-137-en",
+    "VB1-PLAN-137-vi",
+    "VB1-ROUTE-103-en",
+    "VB1-ROUTE-104-en",
+    "VB1-ROUTE-104-vi",
+    "VB1-ROUTE-105-en",
+    "VB1-ROUTE-105-vi",
+    "VB1-ROUTE-107-en",
+    "VB1-ROUTE-108-vi",
+    "VB1-ROUTE-120-en",
+    "VB1-ROUTE-120-vi",
+    "VB1-ROUTE-123-en",
+    "VB1-ROUTE-128-en",
+    "VB1-ROUTE-128-vi",
+    "VB1-ROUTE-129-vi",
+    "VB1-ROUTE-132-en",
+    "VB1-ROUTE-133-en",
+    "VB1-ROUTE-136-en",
+    "VB1-ROUTE-139-en",
+    "VB1-ROUTE-139-vi",
+    "VB1-ROUTE-144-en"
+  ],
+  "provider_calls": 1418,
+  "served_models": {
+    "gpt-5-nano-2025-08-07": 1415,
+    "unavailable": 3
+  },
+  "provider_usage": {
+    "input_tokens": 4634135,
+    "output_tokens": 810238,
+    "cached_input_tokens": 1939968
+  },
+  "calls_missing_usage": 3,
+  "worker_wall_timing": {
+    "count": 408,
+    "median_seconds": 13.567131049999716,
+    "p95_seconds": 52.522583800000575
+  },
+  "sdk_call_timing": {
+    "count": 1418,
+    "median_seconds": 3.710892049999984,
+    "p95_seconds": 10.513434599999528
+  },
+  "checks_by_track": {
+    "grounding": {
+      "unscored": 400,
+      "pass": 72
+    },
+    "memory": {
+      "pass": 151,
+      "unscored": 453,
+      "fail": 16
+    },
+    "planning": {
+      "pass": 72,
+      "unscored": 318,
+      "fail": 12
+    },
+    "reliability": {
+      "unscored": 282,
+      "pass": 46
+    },
+    "retrieval": {
+      "unscored": 308
+    },
+    "routing": {
+      "pass": 392,
+      "unscored": 308,
+      "fail": 29
+    }
+  },
+  "checks_by_language": {
+    "en": {
+      "pass": 368,
+      "unscored": 1033,
+      "fail": 34
+    },
+    "vi": {
+      "pass": 365,
+      "unscored": 1036,
+      "fail": 23
+    }
+  },
+  "check_counts": {
+    "pass": 733,
+    "unscored": 2069,
+    "fail": 57
+  },
+  "semantic_reviews_pending": 1118,
+  "overall_task_success_percent": null,
+  "monetary_cost": null,
+  "cleanup_failures": []
+}

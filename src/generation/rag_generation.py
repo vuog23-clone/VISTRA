@@ -1,9 +1,10 @@
 """Generate and review an answer from bounded retrieved evidence."""
 
 import json
+import logging
 import os
 import re
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 
 from dotenv import load_dotenv
 
@@ -11,11 +12,23 @@ from src.prompts.rag import RAG_PROMPT, GROUNDING_REVIEW_PROMPT
 from src.schema.rag import GroundingReview
 from src.generation.place_context import google_place_context
 from src.generation.vision_inputs import prepare_vision_inputs, multimodal_input
-from src.utils.language import query_language
+from src.utils.language import localized_message
 from src.utils.redaction import CredentialRedactor
 from src.utils.utils import PROJECT_ROOT, load_config
 from src.security.guardrails import validate_text, bounded_int, UnsafeInput
-from src.security.context import prepare_context, answer_safety_issues
+from src.security.context import prepare_context
+from src.retrieval.image_filters import bound_photo_url, image_matches_filters
+from src.generation.response_contract import (resolve_response_contract, response_contract_issues,
+                                               contract_limitation)
+
+
+LOGGER = logging.getLogger('vistra.grounding')
+
+
+@dataclass(frozen=True)
+class GroundingCheck:
+    status: str  # supported, unsupported, or unavailable
+    issues: list[str]
 
 
 def build_rag_context(response, config=None, *, has_image=None):
@@ -37,6 +50,9 @@ def build_rag_context(response, config=None, *, has_image=None):
             for branch in (response.results, response.related_results):
                 if index < len(branch):
                     results.append(branch[index])
+    results = [result for result in results if result.source == 'text' or image_matches_filters(result,
+        categories=response.requested_categories,excluded=response.excluded_categories,place_ids=response.requested_place_ids,
+        excluded_place_ids=response.excluded_place_ids)]
     sources = []
     for result in results[:source_limit]:
         source = {
@@ -62,15 +78,16 @@ def build_rag_context(response, config=None, *, has_image=None):
             source["excerpts"] = excerpts
         else:
             source["place_metadata"] = google_place_context(result, excerpt_limit)
-            if not response.maps_only and isinstance(result.image, dict) and result.image.get("image_url"):
-                source["photo"] = {"url": result.image["image_url"], "input_status": "pending"}
+            photo_url = bound_photo_url(result) if not response.maps_only else None
+            if photo_url:
+                source["photo"] = {"url": photo_url, "input_status": "pending"}
             source["distance_km"] = result.distance_km
             source["metadata_source"] = "Indexed Google Maps place metadata; freshness is unknown."
             visual_input = bool(has_image)
             source["retrieval_basis"] = "image_similarity" if visual_input else "text_to_image_similarity"
             source["photo_match_note"] = ("Visual similarity only; the uploaded image's identity is unverified."
                 if source["retrieval_basis"] == "image_similarity" else
-                "Similarity between the query text and indexed cover photos; not an exact place-name lookup.")
+                "Cover photos ranked by text similarity within eligible indexed place IDs; similarity alone does not establish place identity.")
             if result.metadata.get('retrieval_method') == 'metadata_lookup':
                 source['retrieval_basis'] = 'metadata_lookup'
                 source['photo_match_note'] = 'Place selected by indexed city and category metadata; no image-similarity search was performed.'
@@ -115,6 +132,7 @@ class RAGGenerator:
         self.client = client
         self._photo_fetcher = photo_fetcher
         self.last_grounding = None
+        self.last_contract = None
         self.last_vision = None
         self.last_context = None
 
@@ -125,6 +143,7 @@ class RAGGenerator:
             conversation_memory = ConversationMemory.model_validate(conversation_memory).model_dump()
         context = prepare_context(context)
         self.last_grounding = None
+        self.last_contract = None
         self.last_vision = None
         self.last_context = None
         if not context.get("sources") and not (context.get('weather') or {}).get('days'):
@@ -132,31 +151,43 @@ class RAGGenerator:
         images, self.last_vision = prepare_vision_inputs(context, self.config, fetcher=self._photo_fetcher)
         self.last_context = context
         draft = self._draft(user_query, context, images=images, conversation_memory=conversation_memory)
-        issues = self._grounding_issues(user_query, context, draft, images=images,
-                                       conversation_memory=conversation_memory)
-        if not issues:
+        check = self._check_grounding(user_query, context, draft, images=images,
+                                      conversation_memory=conversation_memory)
+        attempts = [{'stage': 'draft', 'status': check.status, 'issues': check.issues}]
+        if check.status == 'supported':
             self.last_grounding = {"status": "checked", "issues": []}
             return draft
-        # One repair keeps API work bounded. Persistent failures return actual
-        # source facts, never an unchecked model answer.
-        try:
-            repaired = self._draft(user_query, context, images=images,
-                feedback={"previous_draft": draft, "issues": issues}, conversation_memory=conversation_memory)
-            remaining = self._grounding_issues(user_query, context, repaired, images=images,
-                                               conversation_memory=conversation_memory)
-        except Exception:
-            remaining = ['The answer repair did not complete.']
-        if not remaining:
-            self.last_grounding = {"status": "repaired", "issues": issues}
-            return repaired
-        self.last_grounding = {"status": "metadata_fallback", "issues": remaining}
-        fallback = self._source_facts(context, user_query=user_query)
-        if answer_safety_issues(fallback, context):
-            from src.utils.language import localized_message
-            return localized_message(user_query,
-                "The retrieved evidence could not be safely presented.",
-                "Không thể trình bày nguồn truy xuất một cách an toàn.")
-        return fallback
+        # Repair actual draft violations once. An unavailable reviewer supplies
+        # no corrective feedback, so do not regenerate the same unverified answer.
+        if check.status == 'unsupported':
+            initial_issues = check.issues
+            try:
+                repaired = self._draft(user_query, context, images=images,
+                    feedback={"previous_draft": draft, "issues": initial_issues}, conversation_memory=conversation_memory)
+                check = self._check_grounding(user_query, context, repaired, images=images,
+                                              conversation_memory=conversation_memory)
+            except Exception:
+                check = GroundingCheck('unavailable', ['The answer repair did not complete.'])
+                prior = self.last_contract or {}
+                self.last_contract = {**prior, 'status': 'unavailable', 'issues': check.issues,
+                    'attempts': [*prior.get('attempts', []),
+                                 {'stage': 'repair', 'status': 'unavailable', 'issues': check.issues}]}
+            attempts.append({'stage': 'repair', 'status': check.status, 'issues': check.issues})
+            if check.status == 'supported':
+                self.last_grounding = {"status": "repaired", "issues": initial_issues, 'attempts': attempts}
+                return repaired
+        contract_failed = (self.last_contract or {}).get('status') == 'failed'
+        status = ('contract_failed' if contract_failed else
+                  'verification_unavailable' if check.status == 'unavailable' else 'unverified')
+        self.last_grounding = {'status': status, 'issues': check.issues, 'attempts': attempts}
+        LOGGER.warning('Answer verification %s: %s', status,
+                       CredentialRedactor().text('; '.join(check.issues))[:2000])
+        contract = resolve_response_contract(user_query, conversation_memory)
+        if contract_failed:
+            return contract_limitation(contract)
+        # Use the same resolved language for deterministic limitations as drafts.
+        return self._unverified_answer('Trả lời bằng tiếng Việt.' if contract.language == 'vi' else 'Answer in English.',
+                                       verification_unavailable=check.status == 'unavailable')
 
     def _draft(self, user_query, context, *, feedback=None, images=(), conversation_memory=None):
         redactor = CredentialRedactor()
@@ -165,6 +196,7 @@ class RAGGenerator:
             model=self.model_name,
             instructions=RAG_PROMPT,
             input=multimodal_input(json.dumps(redactor.data({"question": user_query, "retrieved_context": context,
+                                           "response_contract": resolve_response_contract(user_query, conversation_memory).payload(),
                                            **({"conversation_memory": conversation_memory} if conversation_memory is not None else {}),
                                            **({"repair_feedback": feedback} if feedback else {})}),
                              ensure_ascii=False, allow_nan=False), images),
@@ -178,7 +210,15 @@ class RAGGenerator:
             raise RuntimeError("LLM returned no answer text.")
         # Keep raw credentials visible to the deterministic safety check, then
         # redact only an approved answer at the output boundary.
-        return completion.output_text.strip()
+        answer = completion.output_text.strip()
+        allowed = {source['source_id'] for source in context['sources']}
+        if (context.get('weather') or {}).get('days'):
+            allowed.add('W1')
+        # Normalize a known source's section annotation before semantic review.
+        # This changes citation syntax only; it cannot add a source or establish
+        # claim support. Unknown IDs remain invalid and still fail validation.
+        return re.sub(r'\[([SW]\d+)(?::[^\]\n]{1,120}|\s+)\]',
+            lambda match: f'[{match[1]}]' if match[1] in allowed else match[0], answer)
 
     def _text_completion(self, **options):
         from src.generation.streaming import current_answer_stream
@@ -195,18 +235,19 @@ class RAGGenerator:
             preview.finish()
         return completion
 
-    def _grounding_issues(self, user_query, context, answer, *, images=(), conversation_memory=None):
-        safety_issues = answer_safety_issues(answer, context)
-        if safety_issues:
-            return safety_issues
-        allowed = {source['source_id'] for source in context['sources']}
-        if (context.get('weather') or {}).get('days'):
-            allowed.add('W1')
-        citations = set(re.findall(r'\[([SW]\d+)\]', answer))
-        if not citations:
-            return ['Factual claims need citations to the supplied source IDs.']
-        if citations - allowed:
-            return ['The answer cites source IDs that were not retrieved.']
+    def _check_grounding(self, user_query, context, answer, *, images=(), conversation_memory=None):
+        contract = resolve_response_contract(user_query, conversation_memory)
+        issues = response_contract_issues(answer, context, contract)
+        previous = (self.last_contract or {}).get('attempts', [])
+        attempts = [*previous, {'stage': 'repair' if previous else 'draft',
+                               'status': 'failed' if issues else 'passed', 'issues': issues}]
+        self.last_contract = {'status': 'failed' if issues else
+                              'repaired' if any(item['status'] == 'failed' for item in previous) else 'checked',
+                              'requirements': contract.payload(), 'issues': issues, 'attempts': attempts}
+        if issues:
+            return GroundingCheck('unsupported', issues)
+        # A truthful limitation can be citation-free. The semantic reviewer must
+        # still reject unsupported facts and uncited factual claims.
         try:
             completion = self.client.responses.parse(
                 model=self.model_name, instructions=GROUNDING_REVIEW_PROMPT,
@@ -218,85 +259,29 @@ class RAGGenerator:
                 reasoning={'effort': self.config['openai_reasoning_effort']},
                 max_output_tokens=min(2000, self.config['generation_max_tokens']), store=False)
             if completion.status != 'completed' or completion.output_parsed is None:
-                return ['The grounding check did not complete.']
+                return GroundingCheck('unavailable', ['The grounding check did not complete.'])
             review = GroundingReview.model_validate(completion.output_parsed)
             for issue in review.issues:
                 validate_text(issue, "grounding issue", max_chars=1000)
-            return review.issues or ([] if review.supported else ['The draft contains unsupported claims.'])
-        except Exception:
-            return ['The grounding check is unavailable.']
+            issues = review.issues or ([] if review.supported else ['The draft contains unsupported claims.'])
+            return GroundingCheck('unsupported' if issues else 'supported', issues)
+        except Exception as error:
+            LOGGER.warning('Grounding review unavailable (%s)', type(error).__name__)
+            return GroundingCheck('unavailable', ['The grounding check is unavailable.'])
 
     @staticmethod
-    def _source_facts(context, *, user_query=""):
-        vietnamese = query_language(user_query) == "vi"
-        def label(english, vietnamese_text):
-            return vietnamese_text if vietnamese else english
-        def literal(value):
-            # Source strings remain quoted data, not active Markdown or HTML.
-            value = " ".join(str(value).split())
-            return re.sub(r"([\\`*_{}\[\]<>#!|])", r"\\\1", value)
-        blocks = [label("## ℹ️ Indexed source facts", "## ℹ️ Thông tin từ nguồn đã lập chỉ mục"),
-                  label("The draft could not be confirmed against the sources. Here are the indexed facts.",
-                        "Chưa xác nhận được câu trả lời dựa trên nguồn. Dưới đây là thông tin trong dữ liệu.")]
-        visual = False
-        for source in context['sources']:
-            citation = f"[{source['source_id']}]"
-            title = label('Retrieved candidate', 'Ứng viên được truy xuất') if source['source'] == 'image' else label('Source', 'Nguồn')
-            blocks.append(f"### 📍 {title}: {literal(source.get('name') or source['entity_id'])} {citation}")
-            if source['source'] == 'image':
-                facts = source.get('place_metadata') or {}
-                for key, english, vietnamese_text in (
-                    ('address', 'Address', 'Địa chỉ'), ('province', 'Province', 'Tỉnh/thành phố'),
-                    ('category', 'Category', 'Loại hình'), ('rating', 'Indexed rating', 'Điểm đánh giá trong dữ liệu'),
-                    ('review_count', 'Review count', 'Số lượt đánh giá'),
-                ):
-                    if facts.get(key) is not None:
-                        blocks.append(f"- **{label(english, vietnamese_text)}:** {literal(facts[key])} {citation}")
-                price = facts.get('price_range') or {}
-                for key, english, vietnamese_text in (('min', 'Minimum price', 'Giá tối thiểu'),
-                                                      ('max', 'Maximum price', 'Giá tối đa')):
-                    if price.get(key) is not None:
-                        value = f"{price[key]} {price.get('currency') or ''}".strip()
-                        blocks.append(f"- **{label(english, vietnamese_text)}:** {literal(value)} {citation}")
-                hours = facts.get('opening_hours') or {}
-                days = zip(('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'),
-                           ('Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ nhật'))
-                for day, vietnamese_day in days:
-                    for window in hours.get(day) or []:
-                        unknown = label('unknown', 'chưa rõ')
-                        value = f"{window.get('open') or unknown}–{window.get('close') or unknown}"
-                        blocks.append(f"- **🕒 {label(day.title(), vietnamese_day)}:** {literal(value)} {citation}")
-                if hours.get('timezone'):
-                    blocks.append(f"- **{label('Time zone', 'Múi giờ')}:** {literal(hours['timezone'])} {citation}")
-            else:
-                blocks.append(label('Original source excerpt:', 'Trích đoạn nguồn (giữ ngôn ngữ gốc):'))
-                for excerpt in source.get('excerpts', [])[:1]:
-                    text = excerpt.get('text', '')
-                    if text:
-                        shortened = text[:650] + ('…' if len(text) > 650 else '')
-                        blocks.append(f"> {literal(shortened)} {citation}")
-            visual |= source.get('retrieval_basis') == 'image_similarity'
-        blocks.append(label('Unlisted values and hours are unknown; indexed information may be outdated.',
-                            'Giá trị và giờ hoạt động không được liệt kê là chưa rõ; dữ liệu có thể đã cũ.'))
-        weather = context.get('weather') or {}
-        if weather:
-            blocks.append(label('### Weather for the trip', '### Thời tiết cho chuyến đi'))
-            blocks.append(literal(weather['note']))
-            for day in weather.get('days', []):
-                values = [day['date'], day['condition']]
-                for key, english, vi, unit in (
-                    ('temperature_min_c', 'Min', 'Thấp nhất', '°C'), ('temperature_max_c', 'Max', 'Cao nhất', '°C'),
-                    ('precipitation_probability_pct', 'Rain probability', 'Khả năng mưa', '%'),
-                    ('wind_max_kmh', 'Max wind', 'Gió tối đa', 'km/h')):
-                    if day.get(key) is not None:
-                        values.append(f"{label(english, vi)}: {day[key]} {unit}")
-                blocks.append('- ' + literal(' · '.join(values)) + ' [W1]')
-            if weather.get('days'):
-                blocks.append(literal(f"Open-Meteo · {weather['timezone']} · {weather['fetched_at']}") + ' [W1]')
-        if visual:
-            blocks.append(label("Visual similarity does not confirm the uploaded image's identity.",
-                                "Sự tương đồng hình ảnh không xác nhận danh tính địa điểm trong ảnh đã tải lên."))
-        return CredentialRedactor().text('\n\n'.join(blocks))
+    def _unverified_answer(user_query, *, verification_unavailable):
+        # An unchecked draft and a raw evidence inventory are both unsuitable
+        # substitutes for answering the question. Preserve the failure's meaning.
+        if verification_unavailable:
+            return localized_message(user_query,
+                "I couldn’t finish verifying an answer against the retrieved sources. Please try again.",
+                "Mình chưa hoàn tất việc kiểm chứng câu trả lời dựa trên các nguồn đã truy xuất. Bạn vui lòng thử lại.")
+        return localized_message(user_query,
+            "I couldn’t produce a sufficiently supported answer to your question from the retrieved sources. "
+            "Please narrow the question or provide relevant source information.",
+            "Mình chưa thể đưa ra câu trả lời có đủ căn cứ từ các nguồn đã truy xuất. "
+            "Bạn có thể hỏi cụ thể hơn hoặc cung cấp thông tin từ nguồn phù hợp.")
 
     def close(self):
         if self._owns_client:

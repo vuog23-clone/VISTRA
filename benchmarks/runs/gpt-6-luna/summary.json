@@ -1,0 +1,305 @@
+{
+  "status": "completed",
+  "catalog_path": "gpt-6-luna/catalog",
+  "summary": {
+    "catalog_cases": 600,
+    "accounted_cases": 600,
+    "executed_cases": 408,
+    "unsupported_cases": 192,
+    "outcomes": {
+      "completed": 408,
+      "unsupported": 192
+    },
+    "planned_turns": 716,
+    "attempted_turns": 510,
+    "turn_errors": 13,
+    "cases_with_turn_errors": 13,
+    "turn_errors_by_type": {
+      "ValueError": 5,
+      "UnsafeInput": 8
+    },
+    "case_error_ids": [
+      "VB1-ROUTE-134-en",
+      "VB1-MEM-103-en",
+      "VB1-MEM-108-en",
+      "VB1-MEM-116-en",
+      "VB1-MEM-147-en",
+      "VB1-MEM-149-en",
+      "VB1-PLAN-149-en",
+      "VB1-PLAN-149-vi",
+      "VB1-FAIL-145-en",
+      "VB1-FAIL-145-vi",
+      "VB1-FAIL-146-en",
+      "VB1-FAIL-147-en",
+      "VB1-FAIL-147-vi"
+    ],
+    "automated_failure_ids": [
+      "VB1-MEM-103-en",
+      "VB1-MEM-106-en",
+      "VB1-MEM-114-en",
+      "VB1-MEM-114-vi",
+      "VB1-MEM-117-en",
+      "VB1-MEM-117-vi",
+      "VB1-MEM-128-vi",
+      "VB1-PLAN-137-en",
+      "VB1-PLAN-145-vi",
+      "VB1-ROUTE-104-en",
+      "VB1-ROUTE-104-vi",
+      "VB1-ROUTE-107-en",
+      "VB1-ROUTE-120-en",
+      "VB1-ROUTE-120-vi",
+      "VB1-ROUTE-123-en",
+      "VB1-ROUTE-128-en",
+      "VB1-ROUTE-128-vi",
+      "VB1-ROUTE-134-en",
+      "VB1-ROUTE-139-en",
+      "VB1-ROUTE-139-vi"
+    ],
+    "provider_calls": 1563,
+    "served_models": {
+      "gpt-6-luna": 1563
+    },
+    "provider_usage": {
+      "input_tokens": 5367228,
+      "output_tokens": 262941,
+      "cached_input_tokens": 893257
+    },
+    "calls_missing_usage": 0,
+    "worker_wall_timing": {
+      "count": 408,
+      "median_seconds": 11.118025549999913,
+      "p95_seconds": 37.550580800000034
+    },
+    "sdk_call_timing": {
+      "count": 1563,
+      "median_seconds": 2.12530270000002,
+      "p95_seconds": 7.132786399999986
+    },
+    "checks_by_track": {
+      "grounding": {
+        "unscored": 400,
+        "pass": 84
+      },
+      "memory": {
+        "pass": 144,
+        "unscored": 466,
+        "fail": 8
+      },
+      "planning": {
+        "pass": 108,
+        "unscored": 318,
+        "fail": 3
+      },
+      "reliability": {
+        "unscored": 282,
+        "pass": 46
+      },
+      "retrieval": {
+        "unscored": 308
+      },
+      "routing": {
+        "pass": 406,
+        "unscored": 308,
+        "fail": 15
+      }
+    },
+    "checks_by_language": {
+      "en": {
+        "pass": 394,
+        "unscored": 1042,
+        "fail": 17
+      },
+      "vi": {
+        "pass": 394,
+        "unscored": 1040,
+        "fail": 9
+      }
+    },
+    "check_counts": {
+      "pass": 788,
+      "unscored": 2082,
+      "fail": 26
+    },
+    "semantic_reviews_pending": 1118,
+    "overall_task_success_percent": null,
+    "monetary_cost": null,
+    "cleanup_failures": []
+  },
+  "requested_model": "gpt-6-luna",
+  "reasoning": "low",
+  "token_cost": {
+    "model": "gpt-6-luna",
+    "currency": "USD",
+    "as_of": "2026-10-16",
+    "price_source": "https://developers.openai.com/api/docs/models/gpt-6-luna",
+    "cache_accounting_source": "https://developers.openai.com/api/docs/guides/prompt-caching",
+    "pricing_sha256": "4c46b7540402074f2efb1b2328a0eb27e1d79a4a35d41469e85561b4f727470a",
+    "estimated_known_usage_subtotal_usd": 0.69613542,
+    "estimated_total_usd": 0.69613542,
+    "sdk_calls_observed": 1563,
+    "priceable_returned_usage_events": 1563,
+    "unpriceable_or_missing_usage_events": 0,
+    "interrupted_cases_with_possible_unreported_calls": [],
+    "reported_input_tokens": 5367228,
+    "reported_output_tokens": 262941,
+    "reported_cached_input_tokens": 893257,
+    "reported_cache_write_tokens": 4333410,
+    "reported_reasoning_tokens": 76395,
+    "standard_tier_assumption_events": 0,
+    "cost_per_independently_reviewed_success_usd": null,
+    "preflight_included": false,
+    "invoice_verified": false,
+    "limitations": [
+      "Standard-rate estimate, not the provider invoice; tier assumptions are recorded.",
+      "Jev, local GPU/CPU, SDK-internal retries and unreported calls are not priced.",
+      "Cached and cache-write tokens are subsets of input; reasoning tokens are already part of output."
+    ]
+  },
+  "preflight_cost": {
+    "estimated_usd": 9.9e-06,
+    "input_usd": 3.9e-06,
+    "output_usd": 6e-06,
+    "tokens": {
+      "input": 39,
+      "output": 12,
+      "cached": 0,
+      "written": 0
+    },
+    "long_context_rate": false,
+    "standard_tier_assumed": true
+  },
+  "retrieval": {
+    "protocol": "vistra-actual-index-retrieval-1",
+    "catalog_cases": 100,
+    "executed_cases": 100,
+    "case_errors": 0,
+    "by_kind": {
+      "category": {
+        "cases": 50,
+        "errors": 0,
+        "raw": {
+          "precision_at_20": 0.506,
+          "precision_of_returned_at_20": 0.506,
+          "recall_at_20": 0.4212254255126655,
+          "recall_at_20_ceiling": 0.592649329286051,
+          "ndcg_at_10": 0.6949948089667871,
+          "hit_at_5": 0.9791666666666666,
+          "reciprocal_rank_at_20": 0.8329861111111111
+        },
+        "final": {
+          "precision_at_20": 0.682,
+          "precision_of_returned_at_20": 0.96,
+          "recall_at_20": 0.592649329286051,
+          "recall_at_20_ceiling": 0.592649329286051,
+          "ndcg_at_10": 1.0,
+          "hit_at_5": 1.0,
+          "reciprocal_rank_at_20": 1.0
+        },
+        "zero_result_cases": 2,
+        "wrong_city_results": 0,
+        "wrong_category_results": 0,
+        "wrong_identity_results": 0
+      },
+      "known_place": {
+        "cases": 30,
+        "errors": 0,
+        "raw": {
+          "precision_at_20": 0.011666666666666667,
+          "precision_of_returned_at_20": 0.011666666666666667,
+          "recall_at_20": 0.23333333333333334,
+          "recall_at_20_ceiling": 1.0,
+          "ndcg_at_10": 0.12260337280315202,
+          "hit_at_5": 0.13333333333333333,
+          "reciprocal_rank_at_20": 0.10231481481481482
+        },
+        "final": {
+          "precision_at_20": 0.05,
+          "precision_of_returned_at_20": 1.0,
+          "recall_at_20": 1.0,
+          "recall_at_20_ceiling": 1.0,
+          "ndcg_at_10": 1.0,
+          "hit_at_5": 1.0,
+          "reciprocal_rank_at_20": 1.0
+        },
+        "zero_result_cases": 0,
+        "wrong_city_results": 0,
+        "wrong_category_results": 0,
+        "wrong_identity_results": 0
+      },
+      "guide_section": {
+        "cases": 20,
+        "errors": 0,
+        "raw": {
+          "precision_at_20": 0.135,
+          "precision_of_returned_at_20": 0.16910714285714284,
+          "recall_at_20": 1.0,
+          "recall_at_20_ceiling": 1.0,
+          "ndcg_at_10": 0.6970337379573213,
+          "hit_at_5": 1.0,
+          "reciprocal_rank_at_20": 0.6666666666666667
+        },
+        "final": {
+          "precision_at_20": 0.135,
+          "precision_of_returned_at_20": 0.16910714285714284,
+          "recall_at_20": 1.0,
+          "recall_at_20_ceiling": 1.0,
+          "ndcg_at_10": 0.6970337379573213,
+          "hit_at_5": 1.0,
+          "reciprocal_rank_at_20": 0.6666666666666667
+        },
+        "zero_result_cases": 0,
+        "wrong_city_results": 0,
+        "wrong_category_results": 0,
+        "wrong_identity_results": 0
+      }
+    },
+    "by_language": {
+      "en": {
+        "cases": 50,
+        "errors": 0,
+        "category_final_metadata_precision": 0.96,
+        "guide_section_ndcg_at_10": 0.7555165818319635
+      },
+      "vi": {
+        "cases": 50,
+        "errors": 0,
+        "category_final_metadata_precision": 0.96,
+        "guide_section_ndcg_at_10": 0.6385508940826791
+      }
+    },
+    "pixel_relevance_scored": false,
+    "routing_scored": false,
+    "llm_generation_used": false,
+    "guide_context_section_hit_cases": 16,
+    "guide_context_section_hit_denominator": 20,
+    "card_wrong_city_count": 0,
+    "card_wrong_category_count": 0,
+    "photo_binding_violations": 0
+  },
+  "retrieval_input_fingerprints": {
+    "metadata": "bf512509b3705c81a04f47c8929d30d65c37638f019d88c8e475d6424d3e46ec",
+    "chunks": "8d42095d1609e2b5ed686b77e4ef04e7e1e8d4d4d203b0afb57b3546ddc644dc",
+    "cases": "6cec61b1d047430b17c4c41df9a4b70a2898b3ecb8f486b9b3c816cb3c0e6377",
+    "qrels": "b90fe4a5e559bbf816a5766ea371de3c213126911383293bed52007adbcd9f97",
+    "index": "e70deb4003fcdd76ca849876bed9d855d5ea7c85c026bdbf8c1d701eaf4d5610"
+  },
+  "retrieval_harness_hashes": {
+    "benchmarks/retrieval/__init__.py": "a51349df158e3a9c343251ed65f4a6ae4d94d20824436fc939132229c2351b10",
+    "benchmarks/retrieval/dataset.py": "5b739eae6c3d2d69b373c2ddfe504c3abef4395524f1e3caee7c87a74146a112",
+    "benchmarks/retrieval/metrics.py": "6da3326d6174b67d50d5989b9beadca938b5ce767c099cc67b71a7dde2e54a14",
+    "benchmarks/retrieval/run.py": "9dfa3d68b971dca44aad0275df3cc8a3653b615846cdbe94735a4077b98d6554",
+    "benchmarks/retrieval/test_metrics.py": "99f0401d3aed69f85a6fd05f6819fefda006bd41837e534b77ed1a84da774c49",
+    "benchmarks/scripts/evaluate_retrieval.py": "206d738465461873990aef9510afad68eab15370b200ef51f01055fc9a8f525d"
+  },
+  "retrieval_model_revisions": {
+    "text_embedding_model": [
+      "67fabc9bef010dabc5f6024aa1b1b6b93410426f"
+    ],
+    "image_embedding_model": [
+      "75de2d55ec2d0b4efc50b3e9ad70dba96a7b2fa2"
+    ],
+    "sparse_embedding_model": [
+      "22b8d2af71a76161e18dd432d2cee0eefa66e412"
+    ]
+  }
+}

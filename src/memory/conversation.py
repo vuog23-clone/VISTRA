@@ -5,7 +5,7 @@ import re
 
 from src.generation.rag_generation import RAGGenerator
 from src.prompts.memory import TURN_UNDERSTANDING_PROMPT
-from src.schema.memory import ConversationMemory, TurnUnderstanding, memory_text
+from src.schema.memory import ConversationMemory, TurnUnderstanding, PreferenceChange, memory_text
 from src.security.guardrails import validate_text, UnsafeInput
 from src.utils.redaction import CredentialRedactor
 
@@ -45,8 +45,96 @@ def build_memory_context(snapshot, records, *, message_chars=2000, max_chars=240
     return ConversationMemory.model_validate(context.model_dump())
 
 
+def _unquoted(query):
+    return re.sub(r'```[\s\S]*?```|`[^`\n]*`|"[^"\n]*"|“[^”\n]*”|‘[^’\n]*’|(?<!\w)\'[^\'\n]+\'(?!\w)',
+                  lambda match: ' ' * len(match[0]), query)
+
+
+def _language_preference(query):
+    # Infer only explicit durable commands; quoted translation material and
+    # one-turn language overrides never establish a stored preference.
+    visible = _unquoted(query)
+    changes = []
+    patterns = {
+        'set': r'\b(?:remember|always|from now on|ghi nhớ|từ giờ|luôn)\b[^.!?;\n]{0,60}?'
+               r'\b(?:reply|respond|answer|speak|language|trả lời|ngôn ngữ)\b[^.!?;\n]{0,35}?'
+               r'\b(?:English|Vietnamese|tiếng Anh|tiếng Việt)\b',
+        'delete': r'\b(?:forget|remove|delete|clear|quên|xóa)\b[^.!?;\n]{0,40}?'
+                  r'\b(?:language(?: preference)?|ngôn ngữ(?: trả lời)?)\b',
+    }
+    for operation, pattern in patterns.items():
+        for match in re.finditer(pattern, visible, re.I):
+            if re.search(r"\b(?:not|don't|do not|never|không|đừng)\s*$", visible[max(0, match.start()-20):match.start()], re.I):
+                continue
+            start = max(visible.rfind(mark, 0, match.start()) for mark in '.!?;\n') + 1
+            end = min((position for mark in '.!?;\n' if (position := visible.find(mark, match.end())) >= 0), default=len(visible))
+            if operation == 'set' and re.search(r'\b(?:this trip|this time|today|chuyến này|lần này|hôm nay)\b', visible[start:end], re.I):
+                continue
+            changes.append((match.start(), PreferenceChange(operation=operation, key='language', source_quote=query[match.start():match.end()])))
+    return max(changes, key=lambda change: change[0])[1] if changes else None
+
+
+def _require_explicit_operations(understanding, query):
+    # A second question must not silently cancel an explicit preference update.
+    # Require structured operations, rather than inventing a preference value.
+    visible = _unquoted(query)
+    if re.search(r"\b(?:do not|don't|never|không|đừng)\s+(?:remember|forget|save|remove|ghi nhớ|quên|lưu|xóa)\b", visible, re.I):
+        return  # Leave negated/contradictory instructions to interpretation.
+    for clause in re.split(r'[.!?;\n]', visible):
+        if re.search(r'\b(?:this trip|this time|today|for now|chuyến này|lần này|hôm nay)\b', clause, re.I):
+            continue
+        set_command = re.match(r'\s*(?:(?:please|can you|could you|would you|hãy|vui lòng)\s+)*'
+                              r'(?:remember|save|ghi nhớ|lưu)\b', clause, re.I)
+        personal_preference = re.search(r'\b(?:I|we)\s+(?:(?:usually|generally|always)\s+)?'
+                                       r'(?:prefer|like|enjoy)\b|\b(?:tôi|mình|chúng tôi)\s+(?:thích|ưu tiên)\b', clause, re.I)
+        delete_command = re.match(r'\s*(?:(?:please|can you|could you|would you|hãy|vui lòng)\s+)*'
+                                 r'(?:forget|remove|delete|clear|quên|xóa)\b', clause, re.I)
+        preference_name = re.search(r'\b(?:preference|diet|interests|language|sở thích|ngôn ngữ)\b', clause, re.I)
+        operation = 'set' if set_command and personal_preference else 'delete' if delete_command and preference_name else None
+        if operation and not any(change.operation == operation and (quote := _unquoted(change.source_quote).strip()) and
+                (quote in clause or clause.strip() in quote)
+                for change in understanding.preference_changes):
+            raise ValueError('Represent each explicit remember/forget preference command in preference_changes, '
+                             'even when the message also asks a question; use an exact quote from that command.')
+
+
+def _trip_budget_quotes(query):
+    """Identify budget facts/corrections that cannot authorize lasting preferences.
+
+    Inspect each clause separately so an independent remember/forget command in
+    the same message survives. Decimal/grouping dots are not sentence boundaries.
+    A bounded vocabulary keeps this guard out of genuine personal preferences.
+    """
+    from src.service.weather_service import normalized
+    allowed = set(('please change update set correct increase decrease raise lower make '
+        'it that this the my our trip s budget amount to at total per person each now instead only '
+        'vui long hay doi sua cap nhat tang giam thanh tong cong len xuong moi nguoi '
+        'ngan sach chuyen nay cua toi minh la chi '
+        'vnd usd eur gbp aud cad sgd jpy krw thb dong dollar dollars euro euros '
+        'million thousand trieu nghin ngan').split())
+    clauses = re.split(r'(?<!\d)\.|\.(?!\d)|[!?;\n]', _unquoted(query))
+    trip_facts = []
+    for clause in clauses:
+        text = normalized(clause).strip()
+        correction = (re.match(r'^(?:(?:please|vui long|hay)\s+)*(?:change|update|set|correct|increase|'
+                     r'decrease|raise|lower|make|doi|sua|cap nhat|tang|giam)\b', text)
+                and set(re.findall(r'[a-z]+', text)) <= allowed)
+        statement = (re.match(r'^(?:(?:my|our|the|this)\b.{0,70}\bbudget\b|(?:trip )?budget\b|ngan sach\b)', text)
+                and not re.search(r'\b(?:remember|save|forget|remove|delete|clear|always|usually|usual|'
+                                  r'generally|prefer|like|enjoy|preference|across trips|ghi nho|luu|quen|xoa|'
+                                  r'luon|thuong|noi chung|thich|uu tien|so thich)\b', text))
+        if ((correction or statement) and re.search(r'\d', text)
+                and re.search(r'\b(?:budget|amount|ngan sach|vnd|usd|eur|gbp|aud|cad|sgd|jpy|krw|thb|dong|dollars?|euros?)\b|[$€£¥]', text)):
+            trip_facts.append(text)
+    return trip_facts
+
+
 def checked_understanding(value, user_query):
     understanding = TurnUnderstanding.model_validate(value)
+    language = _language_preference(user_query)
+    if language is not None:
+        understanding.preference_changes = [change for change in understanding.preference_changes if change.key != 'language'] + [language]
+    _require_explicit_operations(understanding, user_query)
     # A blank model rewrite is unnecessary for a standalone memory request.
     # Keep the validated user's original text rather than losing the turn.
     if not understanding.standalone_query.strip():
@@ -55,11 +143,18 @@ def checked_understanding(value, user_query):
                                                   max_chars=4000, check_intent=True)
     if understanding.summary:
         understanding.summary = memory_text(understanding.summary, maximum=2000)
-    seen = set()
+    seen, accepted = set(), []
+    budget_facts = _trip_budget_quotes(user_query)
     for change in understanding.preference_changes:
         if change.key in seen or change.source_quote not in user_query:
             raise ValueError("Memory changes must quote the current user message and use unique keys.")
         seen.add(change.key)
+        from src.service.weather_service import normalized
+        quote = normalized(_unquoted(change.source_quote)).strip().strip('.!?;')
+        if quote and any(quote in clause for clause in budget_facts):
+            # This also blocks a model-proposed deletion: a numeric trip update
+            # cannot authorize changing any durable preference key.
+            continue
         # Reject common trip-scoped qualifiers even if the model misclassified them.
         start = user_query.find(change.source_quote)
         # Include a qualifier before the quote in the same sentence, so quoting
@@ -70,6 +165,13 @@ def checked_understanding(value, user_query):
                 r"\b(?:this trip|this time|today|for now|chuyến này|chuyen nay|lần này|lan nay|hôm nay|hom nay)\b",
                 scoped_quote, re.I):
             raise ValueError("Temporary trip requirements cannot become durable preferences.")
+        if (change.operation == 'set' and re.search(
+                r'\b(?:my|our|this|next|upcoming)\s+(?:\w+\s+){0,3}trip\s+(?:budget|dates?|starts?|ends?|is|to)\b|'
+                r'\btrip\s+budget\b|\bchuyen di\s+cua\s+(?:toi|minh|chung toi)\b', normalized(scoped_quote))
+                and re.search(r'\b(?:budget|trip|dates?|chuyen di|ngan sach)\b|\d', normalized(change.source_quote))):
+            raise ValueError('Trip-specific destinations, dates and budgets belong in trip_state, not durable preferences.')
+        accepted.append(change)
+    understanding.preference_changes = accepted
     return understanding
 
 

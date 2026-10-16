@@ -1,0 +1,28 @@
+{
+  "model": "gpt-6-luna",
+  "currency": "USD",
+  "as_of": "2026-10-16",
+  "price_source": "https://developers.openai.com/api/docs/models/gpt-6-luna",
+  "cache_accounting_source": "https://developers.openai.com/api/docs/guides/prompt-caching",
+  "pricing_sha256": "4c46b7540402074f2efb1b2328a0eb27e1d79a4a35d41469e85561b4f727470a",
+  "estimated_known_usage_subtotal_usd": 0.69613542,
+  "estimated_total_usd": 0.69613542,
+  "sdk_calls_observed": 1563,
+  "priceable_returned_usage_events": 1563,
+  "unpriceable_or_missing_usage_events": 0,
+  "interrupted_cases_with_possible_unreported_calls": [],
+  "reported_input_tokens": 5367228,
+  "reported_output_tokens": 262941,
+  "reported_cached_input_tokens": 893257,
+  "reported_cache_write_tokens": 4333410,
+  "reported_reasoning_tokens": 76395,
+  "standard_tier_assumption_events": 0,
+  "cost_per_independently_reviewed_success_usd": null,
+  "preflight_included": false,
+  "invoice_verified": false,
+  "limitations": [
+    "Standard-rate estimate, not the provider invoice; tier assumptions are recorded.",
+    "Jev, local GPU/CPU, SDK-internal retries and unreported calls are not priced.",
+    "Cached and cache-write tokens are subsets of input; reasoning tokens are already part of output."
+  ]
+}

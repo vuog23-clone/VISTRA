@@ -59,6 +59,16 @@ class LocationResolver:
         return re.search(pattern, LocationResolver._normalize_words(message)) is not None
 
 
+    @classmethod
+    def configured_name(cls, location, config):
+        """Resolve explicit configured aliases; never strip arbitrary geography."""
+        key = cls._normalize(location)
+        matches = {name for setting in ('location_aliases', 'google_location_aliases')
+                   for name, aliases in config.get(setting, {}).items()
+                   if key in {cls._normalize(value) for value in [name, *aliases]}}
+        return next(iter(matches)) if len(matches) == 1 else location.strip()
+
+
     def _load_pages(self) -> None:
         if self._pages is None:
             self._pages = list(read_jsonl(self.pages_path)) if self.pages_path.is_file() else []

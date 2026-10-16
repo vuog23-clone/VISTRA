@@ -1,0 +1,261 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1530" viewBox="0 0 2400 1530">
+
+<defs>
+ <linearGradient id="cyan" x2="0" y2="1"><stop stop-color="#f1fcff"/><stop offset="1" stop-color="#cceefa"/></linearGradient>
+ <linearGradient id="yellow" x2="0" y2="1"><stop stop-color="#fffaf0"/><stop offset="1" stop-color="#fff0c5"/></linearGradient>
+ <linearGradient id="lavender" x2="0" y2="1"><stop stop-color="#ede5ff"/><stop offset="1" stop-color="#d6c9f5"/></linearGradient>
+ <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="1" dy="3" stdDeviation="2" flood-color="#14213d" flood-opacity=".10"/></filter>
+
+<marker id="blue" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L8 4L0 8Z" fill="#0789e8"/></marker>
+<marker id="orange" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L8 4L0 8Z" fill="#ed7927"/></marker>
+<marker id="purple" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L8 4L0 8Z" fill="#9b7bd8"/></marker>
+</defs><rect width="2400" height="1530" fill="#fff"/>
+<text x="1430" y="55" font-family="Segoe UI,Arial,sans-serif" font-size="51" font-weight="800" fill="#14213d" text-anchor="middle">VISTRA: From User Query to Final Output</text>
+<text x="1430" y="99" font-family="Segoe UI,Arial,sans-serif" font-size="26" font-weight="500" fill="#14213d" text-anchor="middle">Conversation memory • Grounded answers • Evidence-based itinerary planning</text>
+<rect x="30" y="42" width="400" height="90" rx="15" fill="#e8f7ff" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(45,57) scale(0.7)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M3 5h57v42H28L14 62V47H3Z" fill="#caeefe"/><circle cx="17" cy="25" r="3"/><circle cx="32" cy="25" r="3"/><circle cx="47" cy="25" r="3"/>
+</g>
+<text x="108" y="76" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">User Query</text>
+<text x="108" y="110" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Plan 3 relaxed days in Hanoi</text>
+<rect x="30" y="170" width="400" height="1180" rx="15" fill="url(#cyan)" stroke="#14213d" stroke-width="2.2" />
+<rect x="45" y="187" width="370" height="58" rx="15" fill="url(#lavender)" stroke="#14213d" stroke-width="2.2" />
+<text x="230.0" y="226" font-family="Segoe UI,Arial,sans-serif" font-size="31" font-weight="750" fill="#14213d" text-anchor="middle">1  Memory &amp; Intent</text>
+<rect x="480" y="170" width="630" height="1180" rx="15" fill="url(#cyan)" stroke="#14213d" stroke-width="2.2" />
+<rect x="495" y="187" width="600" height="58" rx="15" fill="url(#lavender)" stroke="#14213d" stroke-width="2.2" />
+<text x="795.0" y="226" font-family="Segoe UI,Arial,sans-serif" font-size="31" font-weight="750" fill="#14213d" text-anchor="middle">2  Collect Evidence</text>
+<rect x="1170" y="170" width="630" height="1180" rx="15" fill="url(#yellow)" stroke="#14213d" stroke-width="2.2" />
+<rect x="1185" y="187" width="600" height="58" rx="15" fill="url(#lavender)" stroke="#14213d" stroke-width="2.2" />
+<text x="1485.0" y="226" font-family="Segoe UI,Arial,sans-serif" font-size="31" font-weight="750" fill="#14213d" text-anchor="middle">3  Build &amp; Check</text>
+<rect x="1880" y="170" width="490" height="1180" rx="15" fill="url(#cyan)" stroke="#14213d" stroke-width="2.2" />
+<rect x="1895" y="187" width="460" height="58" rx="15" fill="url(#lavender)" stroke="#14213d" stroke-width="2.2" />
+<text x="2125.0" y="226" font-family="Segoe UI,Arial,sans-serif" font-size="31" font-weight="750" fill="#14213d" text-anchor="middle">4  Save &amp; Deliver</text>
+<path d="M230,133 L230,170" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M230,133 L230,170" fill="none" stroke="#0789e8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<path d="M230,380 L230,415" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M230,380 L230,415" fill="none" stroke="#0789e8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<path d="M230,625 L230,675" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M230,625 L230,675" fill="none" stroke="#0789e8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<path d="M230,805 L230,850" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M230,805 L230,850" fill="none" stroke="#0789e8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<path d="M410,890 L448,890 L448,330 L500,330" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M410,890 L448,890 L448,330 L500,330" fill="none" stroke="#0789e8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<path d="M410,925 L460,925 L460,600 L500,600" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M410,925 L460,925 L460,600 L500,600" fill="none" stroke="#0789e8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<path d="M410,960 L448,960 L448,890 L520,890" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M410,960 L448,960 L448,890 L520,890" fill="none" stroke="#ed7927" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#orange)"/>
+<path d="M1090,330 L1190,330" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M1090,330 L1190,330" fill="none" stroke="#0789e8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<path d="M1090,600 L1190,600" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M1090,600 L1190,600" fill="none" stroke="#0789e8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<path d="M1090,1225 L1140,1225 L1140,835 L1190,835" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M1090,1225 L1140,1225 L1140,835 L1190,835" fill="none" stroke="#ed7927" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#orange)"/>
+<path d="M1770,330 L1900,330" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M1770,330 L1900,330" fill="none" stroke="#0789e8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<path d="M1770,600 L1838,600 L1838,330 L1900,330" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M1770,600 L1838,600 L1838,330 L1900,330" fill="none" stroke="#0789e8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<path d="M1279,1295 L1279,1310" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M1279,1295 L1279,1310" fill="none" stroke="#ed7927" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M1474,1295 L1474,1310" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M1474,1295 L1474,1310" fill="none" stroke="#ed7927" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M1675,1295 L1675,1310" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M1675,1295 L1675,1310" fill="none" stroke="#ed7927" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M1279,1310 L1855,1310 L1855,330 L1900,330" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M1279,1310 L1855,1310 L1855,330 L1900,330" fill="none" stroke="#ed7927" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#orange)"/>
+<path d="M2125,400 L2125,460" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M2125,400 L2125,460" fill="none" stroke="#0789e8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<path d="M2125,690 L2125,760" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M2125,690 L2125,760" fill="none" stroke="#0789e8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<path d="M2350,560 L2390,560 L2390,1480 L12,1480 L12,525 L50,525" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M2350,560 L2390,560 L2390,1480 L12,1480 L12,525 L50,525" fill="none" stroke="#9b7bd8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#purple)"/>
+<path d="M550,940 L485,940 L485,1407 L500,1407" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M550,940 L485,940 L485,1407 L500,1407" fill="none" stroke="#9b7bd8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#purple)"/>
+<path d="M1090,1407 L1125,1407 L1125,149 L430,149 L430,112" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M1090,1407 L1125,1407 L1125,149 L430,149 L430,112" fill="none" stroke="#9b7bd8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#purple)"/>
+<text x="710" y="143" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="600" fill="#9b7bd8" text-anchor="start">Clarification response → next user reply</text>
+<rect x="50" y="270" width="360" height="110" rx="15" fill="white" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(68,294) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<rect x="5" y="2" width="52" height="68" rx="5" fill="#e6f6ff"/><path d="M16 20h29M16 33h29M16 46h24" stroke="#55a8e4" stroke-width="4"/>
+</g>
+<text x="137" y="308" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Validate input</text>
+<text x="137" y="345" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="400" fill="#14213d" text-anchor="start">Safety • Request limits</text>
+<rect x="50" y="415" width="360" height="210" rx="15" fill="white" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(68,439) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M2 14v48c0 16 60 16 60 0V14" fill="#7cccf1"/><ellipse cx="32" cy="14" rx="30" ry="12" fill="#c3efff"/><path d="M2 31c0 16 60 16 60 0M2 47c0 16 60 16 60 0" fill="none"/>
+</g>
+<text x="137" y="453" font-family="Segoe UI,Arial,sans-serif" font-size="24" font-weight="700" fill="#14213d" text-anchor="start">Conversation memory</text>
+<text x="137" y="490" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Recent turns • Summary</text>
+<text x="137" y="522" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Trip state • Saved itinerary</text>
+<text x="137" y="554" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Durable preferences</text>
+<text x="137" y="586" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">PostgreSQL</text>
+<rect x="50" y="675" width="360" height="130" rx="15" fill="white" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(68,699) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M31 10c-9-15-24-4-21 8-14 2-12 20-3 23-7 12 3 25 14 20 3 13 13 12 13 1V15c8-15 23-9 23 4 13 3 12 19 4 24 6 13-5 23-15 18-3 12-12 10-12 1" fill="#8ed6ef"/><path d="M13 22l10 8-3 12M49 22l-8 8 6 11M21 54l10-9M44 54l-9-8" fill="none"/>
+</g>
+<text x="137" y="713" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Interpret this turn</text>
+<text x="137" y="750" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="400" fill="#14213d" text-anchor="start">Intent • Requirements</text>
+<text x="137" y="782" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="400" fill="#14213d" text-anchor="start">Edit scope</text>
+<rect x="50" y="850" width="360" height="150" rx="15" fill="white" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(68,874) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M32 70C20 51 5 39 5 25a27 27 0 0154 0c0 14-15 26-27 45Z" fill="#ff9699"/><circle cx="32" cy="24" r="10" fill="#fff5ef"/>
+</g>
+<text x="137" y="888" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Route this request</text>
+<text x="137" y="925" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Direct / Q&amp;A / Plan</text>
+<text x="137" y="957" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Create or revise itinerary</text>
+<rect x="50" y="1130" width="360" height="170" rx="15" fill="#edf9ff" stroke="#71b9dc" stroke-width="2.2" />
+<text x="72" y="1169" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Explicit memory updates can</text>
+<text x="72" y="1197" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">return an acknowledgement</text>
+<text x="72" y="1225" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">without answer generation.</text>
+<text x="72" y="1253" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">All completed replies still pass</text>
+<text x="72" y="1281" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">output safety and persistence.</text>
+<rect x="500" y="270" width="590" height="130" rx="15" fill="#eff8ff" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(518,294) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M3 5h57v42H28L14 62V47H3Z" fill="#caeefe"/><circle cx="17" cy="25" r="3"/><circle cx="32" cy="25" r="3"/><circle cx="47" cy="25" r="3"/>
+</g>
+<text x="587" y="308" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Direct</text>
+<text x="587" y="345" font-family="Segoe UI,Arial,sans-serif" font-size="23" font-weight="400" fill="#14213d" text-anchor="start">Conversation context</text>
+<text x="587" y="377" font-family="Segoe UI,Arial,sans-serif" font-size="23" font-weight="400" fill="#14213d" text-anchor="start">No indexed evidence needed</text>
+<rect x="1190" y="270" width="580" height="130" rx="15" fill="#eff8ff" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(1208,294) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M3 5h57v42H28L14 62V47H3Z" fill="#caeefe"/><circle cx="17" cy="25" r="3"/><circle cx="32" cy="25" r="3"/><circle cx="47" cy="25" r="3"/>
+</g>
+<text x="1277" y="308" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Direct LLM answer</text>
+<text x="1277" y="345" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="400" fill="#14213d" text-anchor="start">Safety &amp; response-format checks</text>
+<text x="1277" y="377" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="400" fill="#14213d" text-anchor="start">One repair or explicit limitation</text>
+<rect x="500" y="450" width="590" height="295" rx="15" fill="#e8faff" stroke="#7bcbe9" stroke-width="2.2" />
+<text x="525" y="490" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700" fill="#14213d" text-anchor="start">Grounded Q&amp;A</text>
+<rect x="520" y="510" width="550" height="100" rx="15" fill="white" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(538,534) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M32 70C20 51 5 39 5 25a27 27 0 0154 0c0 14-15 26-27 45Z" fill="#ff9699"/><circle cx="32" cy="24" r="10" fill="#fff5ef"/>
+</g>
+<text x="607" y="548" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Resolve destination &amp; filters</text>
+<text x="607" y="585" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Clarify ambiguous destinations</text>
+<path d="M795,610 L795,625" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M795,610 L795,625" fill="none" stroke="#0789e8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#blue)"/>
+<rect x="520" y="625" width="550" height="100" rx="15" fill="white" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(538,649) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M2 14v48c0 16 60 16 60 0V14" fill="#7cccf1"/><ellipse cx="32" cy="14" rx="30" ry="12" fill="#c3efff"/><path d="M2 31c0 16 60 16 60 0M2 47c0 16 60 16 60 0" fill="none"/>
+</g>
+<text x="607" y="663" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Qdrant + PostgreSQL</text>
+<text x="607" y="700" font-family="Segoe UI,Arial,sans-serif" font-size="20" font-weight="400" fill="#14213d" text-anchor="start">Guide text • Photos • Place metadata</text>
+<rect x="500" y="753" width="590" height="64" rx="9" fill="white" stroke="#c3ddec" stroke-width="2.2" />
+<text x="520" y="780" font-family="Segoe UI,Arial,sans-serif" font-size="20" font-weight="600" fill="#14213d" text-anchor="start">Voyage dense + BM25 • SigLIP</text>
+<text x="520" y="806" font-family="Segoe UI,Arial,sans-serif" font-size="19" font-weight="400" fill="#14213d" text-anchor="start">Parallel hybrid searches • Filter / enrich / rank</text>
+<rect x="1190" y="450" width="580" height="295" rx="15" fill="#f2fbff" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(1208,474) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<rect x="5" y="2" width="52" height="68" rx="5" fill="#e6f6ff"/><path d="M16 20h29M16 33h29M16 46h24" stroke="#55a8e4" stroke-width="4"/>
+</g>
+<text x="1277" y="488" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Grounded answer draft</text>
+<text x="1277" y="525" font-family="Segoe UI,Arial,sans-serif" font-size="23" font-weight="400" fill="#14213d" text-anchor="start">Format &amp; citation checks</text>
+<text x="1277" y="557" font-family="Segoe UI,Arial,sans-serif" font-size="23" font-weight="400" fill="#14213d" text-anchor="start">Semantic grounding review</text>
+<text x="1277" y="589" font-family="Segoe UI,Arial,sans-serif" font-size="23" font-weight="400" fill="#14213d" text-anchor="start">One repair for violations</text>
+<text x="1277" y="621" font-family="Segoe UI,Arial,sans-serif" font-size="23" font-weight="400" fill="#14213d" text-anchor="start">Failed or unavailable review:</text>
+<text x="1277" y="653" font-family="Segoe UI,Arial,sans-serif" font-size="23" font-weight="400" fill="#14213d" text-anchor="start">return an explicit limitation</text>
+<rect x="500" y="835" width="590" height="480" rx="15" fill="#fff6db" stroke="#e7bd65" stroke-width="2.2" />
+<rect x="520" y="840" width="550" height="100" rx="15" fill="white" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(538,864) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M32 70C20 51 5 39 5 25a27 27 0 0154 0c0 14-15 26-27 45Z" fill="#ff9699"/><circle cx="32" cy="24" r="10" fill="#fff5ef"/>
+</g>
+<text x="607" y="878" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Check trip details</text>
+<text x="607" y="915" font-family="Segoe UI,Arial,sans-serif" font-size="19" font-weight="400" fill="#14213d" text-anchor="start">Destination cities + duration; dates optional</text>
+<path d="M795,940 L795,965" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M795,940 L795,965" fill="none" stroke="#ed7927" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#orange)"/>
+<rect x="520" y="965" width="550" height="195" rx="15" fill="white" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(538,989) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M3 13L43 1l20 13-40 13Z" fill="#b7dafa"/><path d="M3 13v18l20 14V27Z" fill="#6aaff0"/><path d="M23 27l40-13v18L23 45Z" fill="#f9fbff"/><path d="M3 39l20 15 40-14v14L23 68 3 53Z" fill="#f5cd81"/>
+</g>
+<text x="607" y="1003" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Collect tool evidence</text>
+<text x="607" y="1040" font-family="Segoe UI,Arial,sans-serif" font-size="19" font-weight="400" fill="#14213d" text-anchor="start">GuideSearch • AttractionSearch</text>
+<text x="607" y="1072" font-family="Segoe UI,Arial,sans-serif" font-size="19" font-weight="400" fill="#14213d" text-anchor="start">RestaurantSearch • AccommodationSearch</text>
+<text x="607" y="1104" font-family="Segoe UI,Arial,sans-serif" font-size="19" font-weight="400" fill="#14213d" text-anchor="start">WeatherSearch · Open-Meteo</text>
+<text x="607" y="1136" font-family="Segoe UI,Arial,sans-serif" font-size="19" font-weight="400" fill="#14213d" text-anchor="start">DistanceMatrix · OpenRouteService</text>
+<path d="M795,1160 L795,1180" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M795,1160 L795,1180" fill="none" stroke="#ed7927" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#orange)"/>
+<rect x="520" y="1180" width="550" height="100" rx="15" fill="white" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(538,1204) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<rect x="7" y="4" width="51" height="67" rx="6" fill="#fffaf1"/><path d="M18 1v12M31 1v12M44 1v12" stroke-width="5"/><path d="M18 28h30M18 40h30M18 52h23" stroke="#55a8e4" stroke-width="4"/>
+</g>
+<text x="607" y="1218" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Evidence Notebook</text>
+<text x="607" y="1255" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Bounded tool loop → NotebookWrite</text>
+<text x="523" y="1304" font-family="Segoe UI,Arial,sans-serif" font-size="20" font-weight="600" fill="#14213d" text-anchor="start">Indexed facts + explicit unknowns</text>
+<rect x="1190" y="785" width="580" height="105" rx="15" fill="white" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(1208,809) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M32 70C20 51 5 39 5 25a27 27 0 0154 0c0 14-15 26-27 45Z" fill="#ff9699"/><circle cx="32" cy="24" r="10" fill="#fff5ef"/>
+</g>
+<text x="1277" y="823" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Structured Planner</text>
+<text x="1277" y="860" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="400" fill="#14213d" text-anchor="start">Evidence IDs → Daily itinerary</text>
+<path d="M1470,890 L1470,925" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M1470,890 L1470,925" fill="none" stroke="#ed7927" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#orange)"/>
+<rect x="1190" y="925" width="580" height="105" rx="15" fill="white" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(1208,949) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<rect x="7" y="4" width="51" height="67" rx="6" fill="#fffaf1"/><path d="M18 1v12M31 1v12M44 1v12" stroke-width="5"/><path d="M18 28h30M18 40h30M18 52h23" stroke="#55a8e4" stroke-width="4"/>
+</g>
+<text x="1277" y="963" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Build schedule</text>
+<text x="1277" y="1000" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Bounded search • Hours • Travel gaps</text>
+<path d="M1470,1030 L1470,1065" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M1470,1030 L1470,1065" fill="none" stroke="#ed7927" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#orange)"/>
+<rect x="1190" y="1065" width="580" height="105" rx="15" fill="white" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(1208,1089) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M32 2L61 13v23c0 22-19 37-29 43C20 72 3 57 3 36V13Z" fill="#65be87"/><path d="M32 11l21 8v17c0 16-12 29-21 35-10-7-21-20-21-35V19Z" fill="#dbf9e6"/><path d="M17 37l10 11 22-24" fill="none" stroke="#2c9863" stroke-width="6"/>
+</g>
+<text x="1277" y="1103" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Validate itinerary</text>
+<text x="1277" y="1140" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Sources • Dates • Budget • Edit scope</text>
+<path d="M1770,1115 L1790,1115 L1790,835 L1770,835" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M1770,1115 L1790,1115 L1790,835 L1770,835" fill="none" stroke="#ed7927" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#orange)"/>
+<text x="1530" y="914" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="600" fill="#ed7927" text-anchor="start">Bounded repair on errors</text>
+<path d="M1470,1170 L1470,1205" fill="none" stroke="white" stroke-width="9" stroke-linejoin="round"/>
+<path d="M1470,1170 L1470,1205" fill="none" stroke="#ed7927" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#orange)"/>
+<rect x="1190" y="1205" width="178" height="90" rx="15" fill="#e3f7e7" stroke="#63a878" stroke-width="2.2" />
+<text x="1279.0" y="1240" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="750" fill="#14213d" text-anchor="middle">Verified</text>
+<text x="1279.0" y="1274" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400" fill="#14213d" text-anchor="middle">Checks passed</text>
+<rect x="1380" y="1205" width="188" height="90" rx="15" fill="#fff2cc" stroke="#d8ac49" stroke-width="2.2" />
+<text x="1474.0" y="1240" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="750" fill="#14213d" text-anchor="middle">Partial</text>
+<text x="1474.0" y="1274" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400" fill="#14213d" text-anchor="middle">Unknowns listed</text>
+<rect x="1580" y="1205" width="190" height="90" rx="15" fill="#ffe5e5" stroke="#dc8e8e" stroke-width="2.2" />
+<text x="1675.0" y="1240" font-family="Segoe UI,Arial,sans-serif" font-size="25" font-weight="750" fill="#14213d" text-anchor="middle">Failed</text>
+<text x="1675.0" y="1274" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="400" fill="#14213d" text-anchor="middle">No new itinerary</text>
+<text x="1480" y="1327" font-family="Segoe UI,Arial,sans-serif" font-size="20" font-weight="600" fill="#14213d" text-anchor="middle">Failed edits retain the previous saved plan</text>
+<rect x="1900" y="270" width="450" height="130" rx="15" fill="white" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(1918,294) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M32 2L61 13v23c0 22-19 37-29 43C20 72 3 57 3 36V13Z" fill="#65be87"/><path d="M32 11l21 8v17c0 16-12 29-21 35-10-7-21-20-21-35V19Z" fill="#dbf9e6"/><path d="M17 37l10 11 22-24" fill="none" stroke="#2c9863" stroke-width="6"/>
+</g>
+<text x="1987" y="308" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Output safety</text>
+<text x="1987" y="345" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Safe content • Source boundaries</text>
+<rect x="1900" y="460" width="450" height="230" rx="15" fill="white" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<g transform="translate(1918,484) scale(0.8)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M2 14v48c0 16 60 16 60 0V14" fill="#7cccf1"/><ellipse cx="32" cy="14" rx="30" ry="12" fill="#c3efff"/><path d="M2 31c0 16 60 16 60 0M2 47c0 16 60 16 60 0" fill="none"/>
+</g>
+<text x="1987" y="498" font-family="Segoe UI,Arial,sans-serif" font-size="27" font-weight="700" fill="#14213d" text-anchor="start">Save completed turn</text>
+<text x="1987" y="535" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Messages • Summary • Trip state</text>
+<text x="1987" y="567" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Explicit preference changes</text>
+<text x="1987" y="599" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Atomic PostgreSQL commit</text>
+<text x="1987" y="631" font-family="Segoe UI,Arial,sans-serif" font-size="21" font-weight="400" fill="#14213d" text-anchor="start">Browser media saves separately</text>
+<rect x="1900" y="760" width="450" height="545" rx="15" fill="#f0faff" stroke="#14213d" stroke-width="2.2" filter="url(#shadow)"/>
+<text x="2125" y="804" font-family="Segoe UI,Arial,sans-serif" font-size="28" font-weight="700" fill="#14213d" text-anchor="middle">Browser SSE / API JSON</text>
+<rect x="1920" y="830" width="410" height="170" rx="15" fill="#bceaff" stroke="#9ac6db" stroke-width="2.2" />
+<path d="M1922 960L2020 864L2110 960L2220 874L2328 970V998H1922Z" fill="#92cbb0" stroke="none"/><path d="M1922 977Q2040 942 2140 980T2328 970V998H1922Z" fill="#7fc3dd" stroke="none"/><circle cx="2265" cy="862" r="19" fill="#ffdc89" stroke="none"/>
+<g stroke="#14213d" stroke-width="2.5"><path d="M2072 940h140v42h-140Z" fill="#f5c784"/><path d="M2054 941l87-39 89 39Z" fill="#5c809b"/><path d="M2095 903h94v-26h-94Z" fill="#f5c784"/><path d="M2082 878l60-32 61 32Z" fill="#5c809b"/><path d="M2126 982v-30h29v30" fill="#fbf5e7"/></g>
+<rect x="1920" y="1013" width="410" height="45" rx="7" fill="white" stroke="#cee4f3" stroke-width="2.2" />
+<text x="1935" y="1043" font-family="Segoe UI,Arial,sans-serif" font-size="20" font-weight="400" fill="#14213d" text-anchor="start">Answer or itinerary</text>
+<rect x="1920" y="1073" width="410" height="45" rx="7" fill="white" stroke="#cee4f3" stroke-width="2.2" />
+<text x="1935" y="1103" font-family="Segoe UI,Arial,sans-serif" font-size="20" font-weight="400" fill="#14213d" text-anchor="start">Sources &amp; place cards</text>
+<rect x="1920" y="1133" width="410" height="45" rx="7" fill="white" stroke="#cee4f3" stroke-width="2.2" />
+<text x="1935" y="1163" font-family="Segoe UI,Arial,sans-serif" font-size="20" font-weight="400" fill="#14213d" text-anchor="start">Weather &amp; validation status</text>
+<rect x="1920" y="1193" width="410" height="45" rx="7" fill="white" stroke="#cee4f3" stroke-width="2.2" />
+<text x="1935" y="1223" font-family="Segoe UI,Arial,sans-serif" font-size="20" font-weight="400" fill="#14213d" text-anchor="start">Saved-session reload • Follow-up edits</text>
+<text x="2125" y="1282" font-family="Segoe UI,Arial,sans-serif" font-size="20" font-weight="400" fill="#14213d" text-anchor="middle">SSE: stage progress + final result</text>
+<rect x="500" y="1373" width="590" height="68" rx="15" fill="#f3edff" stroke="#9b7bd8" stroke-width="2.2" />
+<g transform="translate(514,1382) scale(0.6)" stroke="#14213d" stroke-width="2.5" stroke-linejoin="round">
+<path d="M3 5h57v42H28L14 62V47H3Z" fill="#caeefe"/><circle cx="17" cy="25" r="3"/><circle cx="32" cy="25" r="3"/><circle cx="47" cy="25" r="3"/>
+</g>
+<text x="568" y="1401" font-family="Segoe UI,Arial,sans-serif" font-size="23" font-weight="700" fill="#14213d" text-anchor="start">Missing or conflicting details?</text>
+<text x="568" y="1427" font-family="Segoe UI,Arial,sans-serif" font-size="20" font-weight="400" fill="#14213d" text-anchor="start">Ask for clarification; retain pending requirements</text>
+<text x="1200" y="1402" font-family="Segoe UI,Arial,sans-serif" font-size="20" font-weight="400" fill="#14213d" text-anchor="start">Routes: optional walking / driving estimates; no live traffic or fares.</text>
+<text x="1200" y="1433" font-family="Segoe UI,Arial,sans-serif" font-size="19" font-weight="400" fill="#14213d" text-anchor="start">Venue tools query indexed metadata; no live flights or booking availability.</text>
+<rect x="880" y="1462" width="460" height="35" rx="0" fill="white" stroke="white" stroke-width="2.2" />
+<text x="1110" y="1487" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="600" fill="#9b7bd8" text-anchor="middle">Memory for the next turn</text>
+<text x="40" y="1516" font-family="Segoe UI,Arial,sans-serif" font-size="19" font-weight="400" fill="#14213d" text-anchor="start">Current implementation • 16 October 2026 • Provider availability depends on configuration</text>
+<text x="1510" y="1516" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="600" fill="#0789e8" text-anchor="start">Blue: conversation / evidence</text>
+<text x="1810" y="1516" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="600" fill="#ed7927" text-anchor="start">Orange: planning / repair</text>
+<text x="2100" y="1516" font-family="Segoe UI,Arial,sans-serif" font-size="18" font-weight="600" fill="#9b7bd8" text-anchor="start">Purple: follow-up / memory</text>
+</svg>

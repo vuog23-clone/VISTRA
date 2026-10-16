@@ -214,26 +214,128 @@ class PlanningReport(PlanningModel):
 
 
 def duration_from_text(text):
-    folded = text.casefold()
-    match = re.search(r'\b(\d{1,4})[ -]*(?:days?|ngày|ngay)\b', folded)
-    if match:
-        return int(match[1])
+    from src.service.weather_service import normalized
+    folded = normalized(text)
     words = {'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7,
-             'eight': 8, 'nine': 9, 'ten': 10, 'a week': 7, 'one week': 7}
-    for word, count in words.items():
-        if re.search(r'\b' + word + r'(?:[ -]+days?|\b(?=$))', folded):
-            return count
+             'eight': 8, 'nine': 9, 'ten': 10, 'eleven': 11, 'twelve': 12,
+             'thirteen': 13, 'fourteen': 14, 'fifteen': 15, 'sixteen': 16,
+             'seventeen': 17, 'eighteen': 18, 'nineteen': 19, 'twenty': 20,
+             'mot': 1, 'hai': 2, 'ba': 3, 'bon': 4, 'nam': 5,
+             'sau': 6, 'bay': 7, 'tam': 8, 'chin': 9, 'muoi': 10}
+    for unit, count in [('mot', 1), ('hai', 2), ('ba', 3), ('bon', 4), ('tu', 4),
+                        ('lam', 5), ('sau', 6), ('bay', 7), ('tam', 8), ('chin', 9)]:
+        words['muoi '+unit] = 10+count
+    # Match multiword numbers first, including unsupported lengths so the
+    # existing planner limit can reject them rather than reading only a suffix.
+    for tens, count in [('hai muoi', 20), ('ba muoi', 30), ('bon muoi', 40),
+                        ('nam muoi', 50), ('sau muoi', 60), ('bay muoi', 70),
+                        ('tam muoi', 80), ('chin muoi', 90)]:
+        words[tens] = count
+        for unit, value in [('mot', 1), ('hai', 2), ('ba', 3), ('bon', 4), ('tu', 4),
+                            ('lam', 5), ('sau', 6), ('bay', 7), ('tam', 8), ('chin', 9)]:
+            words[tens+' '+unit] = count+value
+    number = r'\d{1,4}|'+'|'.join(re.escape(word) for word in sorted(words, key=len, reverse=True))
+    for match in re.finditer(r'\b('+number+r')[ -]*(?:days?|ngay)\b', folded):
+        # "tháng ba ngày 16" is a calendar date, not a three-day stay.
+        if re.search(r'\bthang\s*$', folded[:match.start()]):
+            continue
+        return int(match[1]) if match[1].isdigit() else words[match[1]]
+    if re.search(r'\b(?:a|one) week\b|\bmot tuan\b', folded):
+        return 7
+    # Preserve the existing support for a bare English duration reply.
+    if folded in words and folded.isascii() and folded in {'one','two','three','four','five','six','seven','eight','nine','ten'}:
+        return words[folded]
     return None
 
 
-def planning_action(query, previous=None):
+def explicit_trip_dates(query):
+    """Recover unambiguous, fully specified calendar ranges, without guessing years."""
     from src.service.weather_service import normalized
-    text = normalized(query)
-    if re.search(r'\b(what is|explain|how does|translate|do not|don.t)\b', text):
-        return None
-    if previous and re.search(r'\b(change|revise|update|replace|remove|swap|adjust|make|day \d+|doi|sua|ngay \d+)\b', text):
-        return 'revise_itinerary'
-    if re.search(r'\b(itinerary|itineraries|travel plan|lich trinh)\b|\b(plan|design|create|build)\b.{0,80}\b(trip|days?|visit)\b', text):
+    text = normalized(re.sub(r'"[^"\n]*"|“[^”\n]*”|`[^`\n]*`', ' ', query)).replace('’', "'")
+    months = {name:index for index,name in enumerate(('january','february','march','april',
+        'may','june','july','august','september','october','november','december'),1)}
+    months.update({name[:3]:index for name,index in list(months.items())})
+    months['sept'] = 9
+    month = '(?:'+'|'.join(sorted(months,key=len,reverse=True))+r')\.?'
+    found = set()
+    def add(match, first, last):
+        if not re.search(r"\b(?:not|never|don't|khong|dung)\b[^,;.!?\n]{0,35}$", text[:match.start()]):
+            found.add((iso_date(first).isoformat(),iso_date(last).isoformat()))
+    for match in re.finditer(r'(?<!\d)(\d{4}-\d{2}-\d{2})\s*(?:to|through|until|den|toi|[-–])\s*(\d{4}-\d{2}-\d{2})(?!\d)',text):
+        add(match,match[1],match[2])
+    for match in re.finditer(r'\b(?:tu\s+)?(?:ngay\s+)?(\d{1,2})\s*(?:den|toi|[-–])\s*(?:ngay\s+)?(\d{1,2})\s+thang\s+(\d{1,2})\s+(?:nam\s+)?(\d{4})\b',text):
+        add(match,f'{int(match[4]):04d}-{int(match[3]):02d}-{int(match[1]):02d}',
+                  f'{int(match[4]):04d}-{int(match[3]):02d}-{int(match[2]):02d}')
+    for match in re.finditer(r'\b('+month+r')\s+(\d{1,2})(?:st|nd|rd|th)?(?:,\s*(\d{4}))?\s*(?:to|through|until|[-–])\s*(?:('+month+r')\s+)?(\d{1,2})(?:st|nd|rd|th)?(?:,\s*|\s+)(\d{4})\b',text):
+        add(match,f'{int(match[3] or match[6]):04d}-{months[match[1].rstrip(".")]:02d}-{int(match[2]):02d}',
+                  f'{int(match[6]):04d}-{months[(match[4] or match[1]).rstrip(".")]:02d}-{int(match[5]):02d}')
+    return next(iter(found)) if len(found) == 1 else None
+
+
+def planning_action(query, previous=None):
+    action = resolve_planning_action(query, previous=previous)
+    return action if action in ('create_itinerary', 'revise_itinerary') else None
+
+
+def resolve_planning_action(query, *, interpreted=None, previous=None):
+    """Reconcile semantic interpretation with explicit, clause-scoped requests.
+
+    Only clear literal requests override the interpreter. Negating a constraint
+    ("don't include flights") must not cancel a separate planning request.
+    """
+    from src.service.weather_service import normalized
+    text = normalized(query).replace('\u2019', "'")
+    # Inspect individual clauses, not a bag of words spanning the whole message.
+    clauses = re.split(r'[,;.!?\n]+|\b(?:but|instead|and|nhung|thay vao do|va)\b', text)
+    literal = None
+    suppressed = False
+    for clause in clauses:
+        if not clause.strip():
+            continue
+        target = r'(?:itinerar(?:y|ies)|(?:travel |trip )?plan|schedule|trip|lich trinh|ke hoach du lich)'
+        determiners = r'(?:(?:a|an|the|my|any|this|our|me|new|mot|cho toi)\s+)*'
+        # Restrict cancellation to planning itself, not "don't remove lunch"
+        # or "don't create a table in the itinerary".
+        no_plan = bool(re.search(r"\b(?:do not|don't|dont|never|khong|dung)\s+"
+            r'(?:(?:please|need to|want to|muon|can)\s+)*'
+            r'(?:plan\b|(?:create|build|design|make|change|revise|update|edit|'
+            r'lap|len|tao|sua|doi|want|need)\s+'+determiners+target+r'\b)|'
+            r'\b(?:stop|cancel|huy)\s+'+determiners+target+r'\b|'
+            r'\bno\s+(?:itinerary|schedule|travel plan)\b', clause))
+        discussion = bool(re.match(r"\s*(?:(?:please|can you|could you|hay|vui long)\s+)*"
+            r'(?:explain|translate|define|what (?:is|are|does)|how (?:does|do)|'
+            r'giai thich|dich|dinh nghia)\b', clause))
+        if no_plan or discussion:
+            suppressed = True
+            if no_plan:
+                literal = None
+            continue
+        if re.search(r"\b(?:do not|don't|dont|never|khong|dung)\b", clause):
+            # Negative meal/transport/output constraints are not positive edits.
+            continue
+        if (re.search(r'\b(?:change|revise|update|edit|replace|remove|swap|adjust|sua|doi)\b.{0,80}'
+                       r'\b(?:itinerary|plan|schedule|day \w+|dinner|lunch|breakfast|'
+                       r'lich trinh|ngay \w+|bua (?:sang|trua|toi))\b', clause)
+                or (previous and re.search(r'\bmake\s+(?:(?:only|just)\s+)?day\s+\w+\b', clause))):
+            # A missing saved plan is handled by the existing clarification flow.
+            literal = 'revise_itinerary'
+        elif re.search(r'\b(?:plan|design|create|build|make)\b.{0,80}'
+                     r'\b(?:trip|days?|visit|itinerar(?:y|ies)|schedule)\b|'
+                     r'\b(?:lap|len|tao)\b.{0,40}\b(?:lich trinh|ke hoach du lich)\b', clause):
+            literal = 'create_itinerary'
+        elif re.search(r"\b(?:i want|i would like|i'd like|give me|toi muon)\b.{0,50}"
+                       r'\b(?:itinerary|schedule|travel plan|lich trinh)\b', clause):
+            literal = 'create_itinerary'
+        elif previous and re.fullmatch(r'\s*(?:day|ngay)\s+\d+\s*,?\s*(?:please)?\s*', clause):
+            literal = 'revise_itinerary'
+    if literal:
+        return literal
+    if suppressed:
+        return interpreted if interpreted in ('answer', 'search') else 'answer'
+    if interpreted is not None:
+        return interpreted
+    # Retain the stateless detector's support for short explicit itinerary requests.
+    if re.search(r'\b(?:itinerary|itineraries|travel plan|lich trinh)\b', text):
         return 'create_itinerary'
     return None
 

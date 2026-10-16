@@ -1,0 +1,23 @@
+{
+  "version": "synthetic-measurement-1.0",
+  "provenance": "fictional_not_live_travel_facts",
+  "sources": [
+    {"source_id":"S1","entity_id":"wikivoyage:measurement-museum","source":"text","name":"Benchmark Museum","url":null,"excerpts":[{"section":"Fictional benchmark record","text":"Benchmark Museum is fictional and in Hanoi. Adult admission is 120000 VND per person. It closes at 17:00 and is closed on Mondays. Child admission is unknown."}]},
+    {"source_id":"S2","entity_id":"wikivoyage:measurement-park","source":"text","name":"Benchmark Park","url":null,"excerpts":[{"section":"Fictional benchmark record","text":"Benchmark Park is fictional and in Hanoi. Admission is explicitly free, 0 VND. Opening hours are unknown."}]}
+  ],
+  "schedule": {
+    "city":"Hanoi", "date":"2026-10-16", "party_size":2, "currency":"USD", "route_minutes":10,
+    "venues":[
+      {"entity_id":"google:measure-meal-a","name":"Fictional meal A","kind":"restaurant","cost":10,"opens":"00:00","closes":"24:00"},
+      {"entity_id":"google:measure-meal-b","name":"Fictional meal B","kind":"restaurant","cost":10,"opens":"00:00","closes":"24:00"},
+      {"entity_id":"google:measure-meal-c","name":"Fictional meal C","kind":"restaurant","cost":10,"opens":"00:00","closes":"24:00"},
+      {"entity_id":"google:measure-sight","name":"Fictional museum","kind":"attraction","cost":10,"opens":"00:00","closes":"24:00"}
+    ]
+  },
+  "photos":[
+    {"id":"beach-a","name":"Fictional Dawn Beach","category":"Beach","city":"Da Nang","photo_owner":"beach-a"},
+    {"id":"cafe-a","name":"Fictional Beach Cafe","category":"Coffee shop","city":"Da Nang","photo_owner":"cafe-a"},
+    {"id":"hotel-a","name":"Fictional Beach Hotel","category":"Hotel","city":"Da Nang","photo_owner":"hotel-a"},
+    {"id":"spoof-beach","name":"Fictional Spoof Beach","category":"Beach","city":"Da Nang","photo_owner":"cafe-a"}
+  ]
+}

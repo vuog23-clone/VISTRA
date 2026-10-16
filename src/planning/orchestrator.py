@@ -5,7 +5,7 @@ from datetime import timedelta
 import re
 
 from src.schema.planning import (TripRequest, ToolAction, ToolResult, Itinerary, PlanningReport,
-    ValidationIssue, ClarificationChoice, duration_from_text, revision_days_from_text, revision_scope)
+    ValidationIssue, ClarificationChoice, duration_from_text, explicit_trip_dates, revision_days_from_text, revision_scope)
 from src.schema.weather import iso_date
 from src.planning.notebook import Notebook
 from src.planning.tools import TravelTools
@@ -20,6 +20,12 @@ def trip_request(query, state, *, location=None, start=None, end=None, preferenc
     data['destinations'] = state.get('destinations') or ([location or state.get('destination')] if location or state.get('destination') else [])
     if location:
         data['destinations'] = [location]
+    from src.resolver.location_resolver import LocationResolver
+    from src.utils.utils import load_config
+    config = load_config()
+    data['destinations'] = list(dict.fromkeys(LocationResolver.configured_name(city, config) for city in data['destinations']))
+    if data.get('origin'):
+        data['origin'] = LocationResolver.configured_name(data['origin'], config)
     data['preferences'] = list(preferences)[:12]
     explicit_duration = duration_from_text(query)
     if explicit_duration and explicit_duration > 14:
@@ -28,6 +34,8 @@ def trip_request(query, state, *, location=None, start=None, end=None, preferenc
     data['duration_days'] = explicit_duration or data.get('duration_days') or duration_from_text(str(state.get('dates') or ''))
     if start or end:
         data.update(start_date=start, end_date=end)
+    elif literal_dates := explicit_trip_dates(query):
+        data.update(start_date=literal_dates[0], end_date=literal_dates[1])
     if data.get('start_date') and not data.get('end_date') and data.get('duration_days'):
         data['end_date'] = (iso_date(data['start_date'])+timedelta(days=data['duration_days']-1)).isoformat()
     if data.get('start_date') and data.get('end_date') and not data.get('duration_days'):
@@ -80,6 +88,8 @@ def render_itinerary(plan, report, notebook, query, request=None):
               'Checks passed against the supplied tool evidence; indexed details and forecasts may change.',
               'Bản nháp: thông tin thiếu và điều kiện chưa xác minh được liệt kê bên dưới.' if report.status == 'partial' else
               'Đã kiểm tra theo dữ liệu công cụ; thông tin đã lưu và dự báo có thể thay đổi.')]
+    blocks.append(label('Activity times and visit lengths are suggestions; known opening hours and travel estimates are checked before display.',
+                        'Giờ tham quan và thời lượng là đề xuất; giờ mở cửa đã biết và thời gian di chuyển ước tính được kiểm tra trước khi hiển thị.'))
     records = notebook.records()
     for day in plan.days:
         blocks.append(f"### {label('Day', 'Ngày')} {day.day} — {literal(day.city)}" + (f' · {day.date}' if day.date else ''))
@@ -179,9 +189,9 @@ class TravelOrchestrator:
                 count = (iso_date(request.end_date)-iso_date(request.start_date)).days+1
                 if 1 <= count <= 14 and count != request.duration_days:
                     vi = query_language(query) == 'vi'
-                    options = [ClarificationChoice(label=f'{count} ngày · {count-1} đêm' if vi else f'{count} days · {count-1} nights', reply=f'{count} ngay' if vi else f'{count} days'),
+                    options = [ClarificationChoice(label=f'{count} ngày · {count-1} đêm' if vi else f'{count} days · {count-1} nights', reply=f'{count} ngày' if vi else f'{count} days'),
                         ClarificationChoice(label=f'{request.duration_days} ngày · {request.duration_days-1} đêm' if vi else f'{request.duration_days} days · {request.duration_days-1} nights',
-                                            reply=f'{request.duration_days} ngay' if vi else f'{request.duration_days} days')]
+                                            reply=f'{request.duration_days} ngày' if vi else f'{request.duration_days} days')]
             pending_action = 'create_itinerary' if action == 'revise_itinerary' and previous is None else action
             return {'answer': question, 'pipeline_status': 'needs_clarification', 'generation_status': 'planning_clarification',
                     'context': None, 'retrieval': None, 'itinerary': None,
@@ -312,6 +322,15 @@ class TravelOrchestrator:
                     plan = Itinerary.model_validate(planner.run(query, request, notebook.data,
                         previous=previous, revision_day=revision_day, draft=plan,
                         errors=[issue for issue in issues if issue.severity == 'error']))
+                    from src.planning.scheduling import build_schedule
+                    from src.service.weather_service import normalized
+                    locked = bool(previous and re.search(r'\bkeep (?:the )?same venues\b|\bgiu nguyen (?:cac )?dia diem\b', normalized(query)))
+                    scheduling = {}
+                    scheduled = build_schedule(plan, request, notebook.data, previous=previous,
+                        revision_day=revision_day, preserve_venues=locked, diagnostics=scheduling)
+                    trace.append(f"ScheduleSearch: {scheduling['status']}, {scheduling['nodes']} candidates checked")
+                    if scheduled is not None:
+                        plan = scheduled
                     report('planning_validate', 'Check itinerary constraints')
                     issues, known_cost, currency = validate_itinerary(plan, request, notebook.data,
                         previous=previous, revision_day=revision_day)

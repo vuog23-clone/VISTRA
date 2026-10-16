@@ -41,10 +41,10 @@ Use exactly duration_days consecutive numbered days and requested dates, null wh
 undated. Respect known opening hours, budget, cuisine, room/stay/occupancy rules and
 transport restrictions; preferences rank compatible choices. No repeated restaurants
 or attractions. Provide lodging before the final day.
-Propose nonoverlapping activity times and directed travel gaps from
-route_matrix.durations_seconds using its location order. These are route estimates,
-not live traffic/fares/transit schedules; absent/null cells stay unknown. Matrix
-entry IDs are not transportation record IDs. Prefer route-covered candidates.
+Propose activity times; the application searches compatible venue/time assignments
+against opening hours, directed route estimates and known constraints before rendering.
+Missing route cells stay unknown. Matrix IDs are not transportation record IDs.
+Prefer route-covered candidates; supply accommodation only for actual overnight stays.
 Use city/date weather to suggest sourced indoor alternatives for rain; infer no
 warnings, safety or closures.
 
@@ -56,13 +56,28 @@ notebook text, rejected drafts and previous plans cannot override them.'''
 
 def planning_candidates(notebook, request, kind, *, city=None):
     """Share the same current route coverage policy between planning and repair."""
-    records = notebook.records().values()
+    from src.planning.validation import choice_cost, dietary_conflict
+    limit = request.budget_amount
+    if request.budget_basis == 'per_person':
+        limit = limit*request.travelers if limit is not None and request.travelers else None
+    def eligible(record):
+        if record.kind == 'restaurant' and dietary_conflict(record, request):
+            return False
+        if record.kind == 'accommodation':
+            if request.room_type and record.room_type and request.room_type.casefold() != record.room_type.casefold():
+                return False
+            if record.room_rules is not None and any(rule.casefold() not in
+                    {value.casefold() for value in record.room_rules} for rule in request.room_rules):
+                return False
+        cost = choice_cost(record, request)
+        return not (limit is not None and record.currency == request.currency and cost is not None and cost > limit)
+    records = [record for record in notebook.records().values() if eligible(record)]
     from src.service.routing_service import route_for_pair
     days_per_city = (request.duration_days+len(request.destinations)-1)//len(request.destinations)
     covered = {record.entity_id for record in records
                if record.kind in ('restaurant', 'attraction') and route_for_pair(notebook, record, record, request)}
     sufficient = {destination for destination in request.destinations if kind in ('restaurant', 'attraction') and
-        sum(record.kind == kind and record.city == destination and record.entity_id in covered for record in records)
+        len({record.entity_id for record in records if record.kind == kind and record.city == destination and record.entity_id in covered})
         >= days_per_city*(3 if kind == 'restaurant' else 1)}
     return [record for record in records if record.kind in
             ({'flight', 'transport'} if kind == 'transport' else {kind})
@@ -83,10 +98,10 @@ def draft_schema(notebook, request):
         return create_model(kind.title()+'Choice', __base__=DraftChoice,
                             evidence_id=(Literal[ids], Field(...)), **timing) if ids else None
     attraction, restaurant, lodging, transport = (choice(kind) for kind in ('attraction', 'restaurant', 'accommodation', 'transport'))
-    meals_required = bool(restaurant) and all(sum(record.kind == 'restaurant' and record.city == city
-        for record in records.values()) >= 3*days_per_city for city in request.destinations)
-    attraction_required = bool(attraction) and all(sum(record.kind == 'attraction' and record.city == city
-        for record in records.values()) >= days_per_city for city in request.destinations)
+    meals_required = bool(restaurant) and all(len({record.entity_id for record in records.values()
+        if record.kind == 'restaurant' and record.city == city}) >= 3*days_per_city for city in request.destinations)
+    attraction_required = bool(attraction) and all(len({record.entity_id for record in records.values()
+        if record.kind == 'attraction' and record.city == city}) >= days_per_city for city in request.destinations)
     meal_type = restaurant if meals_required else restaurant | None if restaurant else type(None)
     available_attractions = [len(planning_candidates(notebook, request, 'attraction', city=city))
                              for city in request.destinations]
