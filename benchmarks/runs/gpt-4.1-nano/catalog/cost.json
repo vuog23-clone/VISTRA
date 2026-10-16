@@ -1,0 +1,28 @@
+{
+  "model": "gpt-4.1-nano",
+  "currency": "USD",
+  "as_of": "2026-10-16",
+  "price_source": "https://developers.openai.com/api/docs/models/gpt-4.1-nano",
+  "cache_accounting_source": "https://developers.openai.com/api/docs/guides/prompt-caching",
+  "pricing_sha256": "4c46b7540402074f2efb1b2328a0eb27e1d79a4a35d41469e85561b4f727470a",
+  "estimated_known_usage_subtotal_usd": 0.5132101,
+  "estimated_total_usd": null,
+  "sdk_calls_observed": 1460,
+  "priceable_returned_usage_events": 1458,
+  "unpriceable_or_missing_usage_events": 2,
+  "interrupted_cases_with_possible_unreported_calls": [],
+  "reported_input_tokens": 4880345,
+  "reported_output_tokens": 174779,
+  "reported_cached_input_tokens": 596480,
+  "reported_cache_write_tokens": 0,
+  "reported_reasoning_tokens": 0,
+  "standard_tier_assumption_events": 0,
+  "cost_per_independently_reviewed_success_usd": null,
+  "preflight_included": false,
+  "invoice_verified": false,
+  "limitations": [
+    "Standard-rate estimate, not the provider invoice; tier assumptions are recorded.",
+    "Jev, local GPU/CPU, SDK-internal retries and unreported calls are not priced.",
+    "Cached and cache-write tokens are subsets of input; reasoning tokens are already part of output."
+  ]
+}

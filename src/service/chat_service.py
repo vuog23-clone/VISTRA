@@ -42,6 +42,9 @@ class ChatService:
             pipeline_options.get("route") not in (None, "auto") or
             pipeline_options.get("location") is not None or bool(pipeline_options.get("categories")) or
             pipeline_options.get("maps_only") or pipeline_options.get("retrieve_only"))
+        requested_work = (constrained or mode == 'retrieval' or pipeline_options.get('include_weather') is True
+            or pipeline_options.get('planning_action') in ('create_itinerary', 'revise_itinerary')
+            or any(pipeline_options.get(key) is not None for key in ('trip_start', 'trip_end', 'revision_day')))
         if mode == "llm_only" and constrained:
             raise UnsafeInput("conflicting_response_mode", "Direct LLM mode conflicts with retrieval options.")
         store = self._store()
@@ -56,9 +59,34 @@ class ChatService:
         if self.interpreter is None:
             self.interpreter = self._resources.enter_context(ConversationInterpreter(config=self.config))
         understanding = checked_understanding(self.interpreter.understand(user_query, memory), user_query)
+        from src.memory.acknowledgement import preserve_literal_budget
+        preserve_literal_budget(user_query, understanding, snapshot.trip_state)
         from src.memory.clarification import resolve_stay_reply
         understanding, clarification_ack = resolve_stay_reply(understanding, user_query, memory)
+        from src.schema.planning import resolve_planning_action
+        action = resolve_planning_action(user_query, interpreted=understanding.action,
+                                         previous=snapshot.trip_state.itinerary)
+        planning = action in ('create_itinerary', 'revise_itinerary')
+        if action != understanding.action or (planning and understanding.intent != 'travel'):
+            understanding = understanding.model_copy(update={
+                'action': action,
+                'intent': 'travel' if planning else understanding.intent})
         current_state = TripState.model_validate(understanding.trip_state.model_dump())
+        if (planning and self.config.get('planning_enabled', True)
+                and pipeline_options.get('planning_mode', 'auto') != 'off' and mode != 'llm_only'
+                and not pipeline_options.get('retrieve_only') and not pipeline_options.get('maps_only')):
+            # Persist the same stay that the planner validates. A model can get
+            # the literal duration wrong even when it extracts the dates correctly.
+            from src.planning.orchestrator import trip_request
+            request = trip_request(user_query, current_state.model_dump(),
+                location=pipeline_options.get('location'), start=pipeline_options.get('trip_start'),
+                end=pipeline_options.get('trip_end'))
+            current_state.duration_days = request.duration_days
+            current_state.start_date, current_state.end_date = request.start_date, request.end_date
+            current_state.destinations = request.destinations
+            if len(request.destinations) == 1:
+                current_state.destination = request.destinations[0]
+            current_state.origin = request.origin
         old_plan = snapshot.trip_state.itinerary
         from src.resolver.location_resolver import LocationResolver
         def cities(state):
@@ -74,6 +102,8 @@ class ChatService:
         if weather is None and same_trip and understanding.action != 'create_itinerary':
             weather = snapshot.trip_state.include_weather
         current_state.include_weather = weather
+        from src.memory.acknowledgement import preserve_scoped_requirement
+        preserve_scoped_requirement(user_query, understanding, snapshot.trip_state, current_state)
         if weather is not None:
             pipeline_options.setdefault('include_weather', weather)
         if understanding.action in ('create_itinerary', 'revise_itinerary'):
@@ -84,7 +114,7 @@ class ChatService:
             pipeline_options.setdefault('revision_day', scoped_day if literal_days else understanding.revision_day)
             if mode == 'auto':
                 pipeline_options['response_mode'] = 'retrieval'
-        elif understanding.action is not None:
+        else:
             pipeline_options.setdefault('planning_action', 'none')
         if mode == "auto" and understanding.intent == "memory" and not constrained:
             # Personal recall/update needs memory, not indexed venue evidence.
@@ -108,9 +138,6 @@ class ChatService:
             if change.operation == "set":
                 generation_memory.long_term.append(MemoryRecord(kind="preference", key=change.key,
                     content=change.source_quote, source_quote=change.source_quote))
-        if self.pipeline is None:
-            from main import run_pipeline
-            self.pipeline = run_pipeline
         # Reapply the budget after current state/preferences have been updated.
         from src.schema.memory import SessionSnapshot
         generation_memory = build_memory_context(SessionSnapshot(summary=generation_memory.summary,
@@ -119,8 +146,15 @@ class ChatService:
             max_chars=self.config.get("memory_context_chars", 24000))
         if current_state.itinerary is not None and generation_memory.trip_state.itinerary is None:
             pipeline_options['previous_itinerary'] = current_state.itinerary.model_dump()
-        result = self.pipeline(user_query, routing_query=routing_query,
-            conversation_memory=generation_memory.model_dump(), **pipeline_options)
+        from src.memory.acknowledgement import memory_acknowledgement
+        result = memory_acknowledgement(user_query, understanding, snapshot.trip_state,
+            current_state, generation_memory, constrained=requested_work or bool(clarification_ack))
+        if result is None:
+            if self.pipeline is None:
+                from main import run_pipeline
+                self.pipeline = run_pipeline
+            result = self.pipeline(user_query, routing_query=routing_query,
+                conversation_memory=generation_memory.model_dump(), **pipeline_options)
         answer = result.get("answer")
         if clarification_ack and isinstance(answer, str) and answer.strip():
             answer = result['answer'] = clarification_ack + '\n\n' + answer

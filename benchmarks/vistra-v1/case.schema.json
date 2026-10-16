@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:vistra:benchmark:case:1",
+  "title": "VISTRA Benchmark v1 scenario family",
+  "description": "Authoring contract. Only public messages and allowed fixture inputs reach the agent. Private expectations are evaluator-only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "family_id", "split", "status", "track", "difficulty", "reference_date", "timezone", "settings", "fixtures", "turns", "private_expectations", "review"],
+  "properties": {
+    "title": {"type": "string", "minLength": 1},
+    "coverage_tags": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "leakage_group": {"type": "string", "minLength": 1},
+    "surface": {"enum": ["chat_service", "developer_api", "streaming_frontend", "pipeline", "planner"]},
+    "schema_version": {"const": "1.0"},
+    "family_id": {"type": "string", "pattern": "^VB1-[A-Z]+-[0-9]{3}$"},
+    "split": {"enum": ["development", "validation", "test"]},
+    "status": {"enum": ["draft", "reviewed", "frozen"]},
+    "track": {"enum": ["routing", "retrieval", "grounding", "memory", "planning", "reliability"]},
+    "difficulty": {"enum": ["easy", "medium", "hard"]},
+    "reference_date": {"type": "string", "format": "date"},
+    "timezone": {"const": "Asia/Bangkok"},
+    "settings": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"enum": ["fixed_notebook", "end_to_end_replay", "live_integration"]}
+    },
+    "fixtures": {
+      "type": "object", "additionalProperties": false,
+      "required": ["set_id", "provenance", "readiness", "manifest_sha256"],
+      "properties": {
+        "set_id": {"type": "string", "minLength": 1},
+        "provenance": {"enum": ["snapshot", "synthetic", "mixed"]},
+        "readiness": {"enum": ["planned", "reviewed", "frozen"]},
+        "manifest_sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "setup": {
+      "type": "object", "additionalProperties": false,
+      "description": "References to allowed public benchmark inputs, not private witnesses or expected answers. Setup files live in the declared hashed fixture manifest.",
+      "properties": {
+        "environment_ref": {"type": "string", "minLength": 1},
+        "prior_history_ref": {"type": ["string", "null"]},
+        "memory_fixture_ref": {"type": ["string", "null"]},
+        "previous_itinerary_ref": {"type": ["string", "null"]},
+        "trip_request_ref": {"type": ["string", "null"]},
+        "notebook_ref": {"type": ["string", "null"]},
+        "reference_image_ref": {"type": ["string", "null"]}
+      }
+    },
+    "turns": {
+      "type": "array", "minItems": 1, "maxItems": 10,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["turn_id", "owner_alias", "session_alias", "messages"],
+        "properties": {
+          "turn_id": {"type": "string", "pattern": "^t[1-9][0-9]?$"},
+          "owner_alias": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "session_alias": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+          "messages": {
+            "type": "object", "additionalProperties": false,
+            "required": ["en", "vi"],
+            "properties": {
+              "en": {"type": "string", "minLength": 1, "maxLength": 8000},
+              "vi": {"type": "string", "minLength": 1, "maxLength": 8000}
+            }
+          },
+          "request_overrides": {
+            "type": "object", "additionalProperties": false,
+            "description": "Harness-only HTTP mutations for negative API cases. Never send these fields as model instructions. Authorization presets use ephemeral test keys only.",
+            "properties": {
+              "body": {"type": "object"},
+              "authorization": {"enum": ["missing", "invalid_test_key"]}
+            }
+          }
+        }
+      }
+    },
+    "private_expectations": {
+      "type": "object", "additionalProperties": false,
+      "required": ["feasibility", "witness_ref", "expected_handling", "assertions", "qrels_ref"],
+      "properties": {
+        "feasibility": {"enum": ["known_feasible", "known_infeasible", "unknown", "not_applicable"]},
+        "witness_ref": {"type": ["string", "null"]},
+        "qrels_ref": {"type": ["string", "null"]},
+        "expected_handling": {
+          "type": "object", "minProperties": 1,
+          "patternProperties": {
+            "^t[1-9][0-9]?$": {"enum": ["complete", "partial", "clarify", "reject", "infeasible", "unavailable", "conflict"]}
+          },
+          "additionalProperties": false
+        },
+        "assertions": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["id", "turn_id", "dimension", "importance", "grader", "check", "parameters"],
+            "properties": {
+              "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+              "turn_id": {"type": "string", "pattern": "^t[1-9][0-9]?$"},
+              "dimension": {"enum": ["environment", "commonsense", "hard", "grounding", "personalization", "interaction", "failure_handling"]},
+              "importance": {"enum": ["gate", "required", "advisory"]},
+              "grader": {"enum": ["code", "human", "model_assisted"]},
+              "check": {"enum": ["decision", "retrieval", "claim_support", "coverage", "citation_support", "output_language", "memory_state", "plan_constraints", "protected_edits", "unknown_disclosure", "clarification", "side_effects", "tool_policy"]},
+              "parameters": {"type": "object", "minProperties": 1},
+              "notes": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object", "additionalProperties": false,
+      "required": ["reviewer_ids", "adjudicated", "blocking_items"],
+      "properties": {
+        "reviewer_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "adjudicated": {"type": "boolean"},
+        "blocking_items": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"settings": {"contains": {"const": "fixed_notebook"}}}},
+      "then": {
+        "required": ["setup"],
+        "properties": {"setup": {"required": ["trip_request_ref", "notebook_ref"], "properties": {"trip_request_ref": {"type": "string", "minLength": 1}, "notebook_ref": {"type": "string", "minLength": 1}}}}
+      }
+    },
+    {
+      "if": {"properties": {"status": {"enum": ["reviewed", "frozen"]}}},
+      "then": {
+        "properties": {
+          "review": {"properties": {"reviewer_ids": {"minItems": 2}, "adjudicated": {"const": true}, "blocking_items": {"maxItems": 0}}},
+          "fixtures": {"properties": {"readiness": {"enum": ["reviewed", "frozen"]}, "manifest_sha256": {"type": "string"}}}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "frozen"}}},
+      "then": {"properties": {"fixtures": {"properties": {"readiness": {"const": "frozen"}}}}}
+    },
+    {
+      "if": {"properties": {"private_expectations": {"properties": {"feasibility": {"enum": ["known_feasible", "known_infeasible"]}}}}},
+      "then": {"properties": {"private_expectations": {"properties": {"witness_ref": {"type": "string", "minLength": 1}}}}}
+    }
+  ]
+}

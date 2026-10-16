@@ -1,0 +1,108 @@
+{
+  "protocol": "vistra-actual-index-retrieval-1",
+  "catalog_cases": 100,
+  "executed_cases": 100,
+  "case_errors": 0,
+  "by_kind": {
+    "category": {
+      "cases": 50,
+      "errors": 0,
+      "raw": {
+        "precision_at_20": 0.506,
+        "precision_of_returned_at_20": 0.506,
+        "recall_at_20": 0.4212254255126655,
+        "recall_at_20_ceiling": 0.592649329286051,
+        "ndcg_at_10": 0.6949948089667871,
+        "hit_at_5": 0.9791666666666666,
+        "reciprocal_rank_at_20": 0.8329861111111111
+      },
+      "final": {
+        "precision_at_20": 0.682,
+        "precision_of_returned_at_20": 0.96,
+        "recall_at_20": 0.592649329286051,
+        "recall_at_20_ceiling": 0.592649329286051,
+        "ndcg_at_10": 1.0,
+        "hit_at_5": 1.0,
+        "reciprocal_rank_at_20": 1.0
+      },
+      "zero_result_cases": 2,
+      "wrong_city_results": 0,
+      "wrong_category_results": 0,
+      "wrong_identity_results": 0
+    },
+    "known_place": {
+      "cases": 30,
+      "errors": 0,
+      "raw": {
+        "precision_at_20": 0.011666666666666667,
+        "precision_of_returned_at_20": 0.011666666666666667,
+        "recall_at_20": 0.23333333333333334,
+        "recall_at_20_ceiling": 1.0,
+        "ndcg_at_10": 0.12260337280315202,
+        "hit_at_5": 0.13333333333333333,
+        "reciprocal_rank_at_20": 0.10231481481481482
+      },
+      "final": {
+        "precision_at_20": 0.05,
+        "precision_of_returned_at_20": 1.0,
+        "recall_at_20": 1.0,
+        "recall_at_20_ceiling": 1.0,
+        "ndcg_at_10": 1.0,
+        "hit_at_5": 1.0,
+        "reciprocal_rank_at_20": 1.0
+      },
+      "zero_result_cases": 0,
+      "wrong_city_results": 0,
+      "wrong_category_results": 0,
+      "wrong_identity_results": 0
+    },
+    "guide_section": {
+      "cases": 20,
+      "errors": 0,
+      "raw": {
+        "precision_at_20": 0.135,
+        "precision_of_returned_at_20": 0.16910714285714284,
+        "recall_at_20": 1.0,
+        "recall_at_20_ceiling": 1.0,
+        "ndcg_at_10": 0.6970337379573213,
+        "hit_at_5": 1.0,
+        "reciprocal_rank_at_20": 0.6666666666666667
+      },
+      "final": {
+        "precision_at_20": 0.135,
+        "precision_of_returned_at_20": 0.16910714285714284,
+        "recall_at_20": 1.0,
+        "recall_at_20_ceiling": 1.0,
+        "ndcg_at_10": 0.6970337379573213,
+        "hit_at_5": 1.0,
+        "reciprocal_rank_at_20": 0.6666666666666667
+      },
+      "zero_result_cases": 0,
+      "wrong_city_results": 0,
+      "wrong_category_results": 0,
+      "wrong_identity_results": 0
+    }
+  },
+  "by_language": {
+    "en": {
+      "cases": 50,
+      "errors": 0,
+      "category_final_metadata_precision": 0.96,
+      "guide_section_ndcg_at_10": 0.7555165818319635
+    },
+    "vi": {
+      "cases": 50,
+      "errors": 0,
+      "category_final_metadata_precision": 0.96,
+      "guide_section_ndcg_at_10": 0.6385508940826791
+    }
+  },
+  "pixel_relevance_scored": false,
+  "routing_scored": false,
+  "llm_generation_used": false,
+  "guide_context_section_hit_cases": 16,
+  "guide_context_section_hit_denominator": 20,
+  "card_wrong_city_count": 0,
+  "card_wrong_category_count": 0,
+  "photo_binding_violations": 0
+}

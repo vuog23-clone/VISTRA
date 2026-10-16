@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VISTRA · Single-case demo</title>
+  <link rel="stylesheet" href="/assets/demo.css">
+  <script src="/assets/demo.js" defer></script>
+</head>
+<body>
+  <header><a href="/">VISTRA<span> / BENCHMARK LAB</span></a><span id="health">Connecting…</span></header>
+  <main>
+    <section class="intro"><p class="eyebrow">ONE SCENARIO AT A TIME</p><h1>Try a case. Inspect the reply.</h1><p>Browse 300 scenario families. Compare live VISTRA replies with the candidate expected behavior.</p></section>
+    <div class="notice"><strong>Live prompt trial</strong> Uses your running API, current data and real provider calls. Frozen fixtures, a fixed clock and fault injection are not applied. Results are unscored; expected labels still need independent review.</div>
+    <div class="layout">
+      <aside>
+        <label for="area">Area</label><select id="area"><option value="">All areas</option><option value="routing" selected>Routing</option><option value="retrieval">Retrieval</option><option value="grounding">Grounding</option><option value="memory">Memory</option><option value="planning">Planning</option><option value="reliability">Reliability</option></select>
+        <label for="search">Find a scenario</label><input id="search" type="search" placeholder="ID or keyword…">
+        <div class="list-heading"><span>SCENARIOS</span><span id="count"></span></div><div id="case-list" role="list" aria-label="Scenarios"></div>
+      </aside>
+      <section class="workspace">
+        <div class="case-heading"><div><p class="eyebrow" id="case-id"></p><h2 id="case-title">Loading scenarios…</h2></div><div><label for="language">Prompt language</label><select id="language"><option value="vi">Tiếng Việt</option><option value="en">English</option></select></div></div>
+        <div id="case-meta" class="muted"></div><p id="preview-reason" class="notice" hidden></p>
+        <div class="actions"><button id="run" disabled>Run next turn · live</button><button id="reset" class="secondary" disabled>Fresh run</button><span id="run-status" role="status" aria-live="polite">Choose a case to begin.</span></div>
+        <p class="small muted">Each fresh run uses isolated benchmark users and sessions. Its messages and memories are saved by the API. Expected answers are never sent to VISTRA.</p>
+        <div id="turns"></div>
+        <details class="gold"><summary>All candidate assertions · evaluator view</summary><pre id="assertions"></pre></details>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

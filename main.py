@@ -73,11 +73,15 @@ def run_pipeline(
         raise ValueError('Invalid planning mode or action.')
     if revision_day is not None and (type(revision_day) is not int or not 1 <= revision_day <= 14):
         raise ValueError('The revision day must be from 1 to 14.')
-    if response_mode == 'auto' and config.get('planning_enabled', True) and planning_mode != 'off':
-        from src.schema.planning import planning_action as detect_planning
-        if planning_action in ('create_itinerary', 'revise_itinerary') or (
-                planning_action is None and detect_planning(user_query, previous_itinerary or (conversation_memory or {}).get('trip_state', {}).get('itinerary'))):
-            retrieval_requested = True
+    from src.schema.planning import planning_action as detect_planning, Itinerary
+    state = (conversation_memory or {}).get('trip_state') or {}
+    previous = previous_itinerary or (Itinerary.model_validate(state['itinerary']) if state.get('itinerary') else None)
+    action = planning_action if planning_action is not None else detect_planning(user_query, previous)
+    planning_requested = (config.get('planning_enabled', True) and planning_mode != 'off'
+        and not retrieve_only and not maps_only and response_mode != 'llm_only'
+        and action in ('create_itinerary', 'revise_itinerary'))
+    if response_mode == 'auto' and planning_requested:
+        retrieval_requested = True
     redactor = CredentialRedactor()
     started = perf_counter()
     events = []
@@ -100,6 +104,8 @@ def run_pipeline(
             on_progress(event)
 
     def finish(retrieval_output, context, answer, generation_status, model, pipeline_status="complete"):
+        if planning_requested and not planning_output.get('planning'):
+            raise RuntimeError('An itinerary request returned without a planning result.')
         report({"step": "output", "title": "Pipeline finished", "status": "done"})
         return redactor.data({
             "user_query": user_query,
@@ -114,6 +120,8 @@ def run_pipeline(
             "generation_status": generation_status,
             "grounding": getattr(direct_generator if response_routing and
                 response_routing["mode"] == "llm_only" else generator, "last_grounding", None),
+            "response_contract": getattr(direct_generator if response_routing and
+                response_routing["mode"] == "llm_only" else generator, "last_contract", None),
             "pipeline_status": pipeline_status,
             "model": model,
             "generation_vision": getattr(generator, "last_vision", None),
@@ -126,6 +134,9 @@ def run_pipeline(
     selected_route = None if route in (None, "auto") else route
     report({"step": "input", "title": "User query received", "status": "done",
             "query": user_query, "route": selected_route or "auto"})
+    if planning_requested:
+        report({'step': 'planning_routing', 'title': 'Use the structured itinerary planner',
+                'status': 'done', 'action': action})
 
     with ExitStack() as resources:
         if image is not None:
@@ -166,7 +177,8 @@ def run_pipeline(
             try:
                 answer = (direct_generator.generate(user_query, conversation_memory=conversation_memory)
                           if conversation_memory is not None else direct_generator.generate(user_query))
-                if direct_answer_issues(answer):
+                direct_fallback = (getattr(direct_generator, 'last_grounding', None) or {}).get('status') == 'direct_fallback'
+                if direct_answer_issues(answer, None if direct_fallback else user_query, conversation_memory):
                     raise UnsafeInput("unsafe_answer", "The direct answer failed safety validation.")
             except Exception:
                 report({"step": "generation", "title": "Direct LLM generation failed", "status": "error"})
@@ -174,19 +186,15 @@ def run_pipeline(
             grounding = getattr(direct_generator, "last_grounding", None) or {}
             status = "direct_fallback" if grounding.get("status") == "direct_fallback" else "direct_complete"
             report({"step": "generation", "title": "Direct LLM answer completed", "status": "done"})
-            return finish(None, None, redactor.text(answer), status, model)
+            return finish(None, None, redactor.text(answer), status, model,
+                          pipeline_status='partial' if status == 'direct_fallback' else 'complete')
 
-        from src.schema.planning import planning_action as detect_planning, Itinerary
-        state = (conversation_memory or {}).get('trip_state') or {}
-        previous = previous_itinerary or (Itinerary.model_validate(state['itinerary']) if state.get('itinerary') else None)
-        action = planning_action or detect_planning(user_query, previous)
         if action == 'revise_itinerary':
             from src.schema.planning import revision_days_from_text
             literal_days = revision_days_from_text(user_query)
             if literal_days:
                 revision_day = next(iter(literal_days)) if len(literal_days) == 1 else None
-        if (config.get('planning_enabled', True) and planning_mode != 'off' and not retrieve_only and not maps_only
-                and action in ('create_itinerary', 'revise_itinerary')):
+        if planning_requested:
             if conversation_memory is None:
                 from src.memory.conversation import ConversationInterpreter
                 from src.schema.memory import ConversationMemory
@@ -345,22 +353,32 @@ def run_pipeline(
                 if isinstance(vision, dict):
                     report({"step": "vision", "title": "Retrieved photos supplied to the LLM", "status": "done", **vision})
                 # Injected generators receive the same output boundary.
-                from src.security.context import answer_safety_issues
-                if answer_safety_issues(answer, context):
-                    raise UnsafeInput("unsafe_answer", "The generated answer failed safety validation.")
+                from src.generation.response_contract import (ResponseContract, resolve_response_contract,
+                                                               response_contract_issues)
+                limitation = (getattr(generator, 'last_grounding', None) or {}).get('status') in {
+                    'unverified', 'verification_unavailable', 'contract_failed'}
+                contract = (ResponseContract(None) if limitation else
+                            resolve_response_contract(user_query, conversation_memory))
+                if response_contract_issues(answer, context, contract):
+                    raise UnsafeInput("unsafe_answer", "The generated answer failed response contract validation.")
                 answer = redactor.text(answer)
             except Exception:
                 report({"step": "generation", "title": "LLM generation failed", "status": "error"})
                 raise
             grounding = getattr(generator, "last_grounding", None) or {}
-            generation_status = "metadata_fallback" if grounding.get("status") == "metadata_fallback" else "complete"
-            report({"step": "generation", "title": "Indexed facts returned" if generation_status == "metadata_fallback"
+            generation_status = grounding.get('status') if grounding.get('status') in {
+                'unverified', 'verification_unavailable', 'contract_failed'} else 'complete'
+            report({"step": "generation", "title": "Answer verification could not finish" if generation_status == 'verification_unavailable'
+                    else "Response contract validation failed" if generation_status == 'contract_failed'
+                    else "A supported answer could not be produced" if generation_status == 'unverified'
                     else "RAG answer completed", "status": "done", "grounding": grounding.get("status")})
 
     if on_context is not None:
         on_context(context)
     # 5. OUTPUT: retain both the retrieval results and the generated answer.
-    return finish(retrieval_output, context, answer, generation_status, model)
+    return finish(retrieval_output, context, answer, generation_status, model,
+                  pipeline_status='partial' if generation_status in {
+                      'unverified', 'verification_unavailable', 'contract_failed'} else 'complete')
 
 
 def print_progress(event):

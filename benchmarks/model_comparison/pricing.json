@@ -1,0 +1,16 @@
+{
+  "as_of": "2026-10-16",
+  "currency": "USD",
+  "basis": "Published Standard text-token rates, per 1 million tokens; estimates are not invoices.",
+  "sources": {
+    "gpt-5-nano": "https://developers.openai.com/api/docs/models/gpt-5-nano",
+    "gpt-6-luna": "https://developers.openai.com/api/docs/models/gpt-6-luna",
+    "gpt-4.1-nano": "https://developers.openai.com/api/docs/models/gpt-4.1-nano",
+    "cache_accounting": "https://developers.openai.com/api/docs/guides/prompt-caching"
+  },
+  "models": {
+    "gpt-5-nano": {"input": 0.05, "cached_input": 0.005, "output": 0.4},
+    "gpt-6-luna": {"input": 0.1, "cached_input": 0.01, "cache_write": 0.125, "output": 0.5, "long_context_threshold": 272000, "long_input_multiplier": 2, "long_output_multiplier": 1.5},
+    "gpt-4.1-nano": {"input": 0.1, "cached_input": 0.025, "output": 0.4}
+  }
+}

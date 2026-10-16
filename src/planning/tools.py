@@ -243,10 +243,12 @@ class TravelTools:
         catalog = self._google()
         if self._places is None:
             self._places = catalog.store.list_places()
-        aliases = [city]
-        for canonical, values in self.config.get('google_location_aliases', {}).items():
-            if LocationResolver._normalize(city) in {LocationResolver._normalize(v) for v in [canonical, *values]}:
-                aliases = [canonical, *values]
+        canonical_city = LocationResolver.configured_name(city, self.config)
+        aliases = [city, canonical_city]
+        for setting in ('google_location_aliases', 'location_aliases'):
+            for canonical, values in self.config.get(setting, {}).items():
+                if canonical == canonical_city:
+                    aliases.extend([canonical, *values])
         kind = {'AttractionSearch': 'attraction', 'RestaurantSearch': 'restaurant', 'AccommodationSearch': 'accommodation'}[name]
         categories = {'attraction': {'attraction', 'museum', 'park', 'garden', 'beach', 'viewpoint', 'market'},
                       'restaurant': {'restaurant', 'cafe'},
@@ -291,7 +293,7 @@ class TravelTools:
             note='Indexed places, not live availability. Exact cost units, cuisine and room restrictions are not supplied by this dataset.')
 
     def _benchmark(self, name, city, *, action=None):
-        root = resolve_path(self.config.get('planning_benchmark_path', 'datasets/benchmark/travelplanner'))
+        root = resolve_path(self.config.get('planning_benchmark_path', 'benchmarks/travelplanner/database'))
         paths = {'FlightSearch': 'flights/clean_Flights_2022.csv', 'DistanceMatrix': 'googleDistanceMatrix/distance.csv',
             'RestaurantSearch': 'restaurants/clean_restaurant_2022.csv', 'AttractionSearch': 'attractions/attractions.csv',
             'AccommodationSearch': 'accommodations/clean_accommodations_2022.csv', 'CitySearch': 'background/citySet_with_states.txt'}

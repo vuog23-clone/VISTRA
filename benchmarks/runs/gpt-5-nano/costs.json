@@ -1,0 +1,63 @@
+{
+  "first-run": {
+    "model": "gpt-5-nano",
+    "currency": "USD",
+    "as_of": "2026-10-16",
+    "price_source": "https://developers.openai.com/api/docs/models/gpt-5-nano",
+    "cache_accounting_source": "https://developers.openai.com/api/docs/guides/prompt-caching",
+    "pricing_sha256": "4c46b7540402074f2efb1b2328a0eb27e1d79a4a35d41469e85561b4f727470a",
+    "estimated_known_usage_subtotal_usd": 0.46850339,
+    "estimated_total_usd": null,
+    "sdk_calls_observed": 1418,
+    "priceable_returned_usage_events": 1415,
+    "unpriceable_or_missing_usage_events": 3,
+    "interrupted_cases_with_possible_unreported_calls": [],
+    "reported_input_tokens": 4634135,
+    "reported_output_tokens": 810238,
+    "reported_cached_input_tokens": 1939968,
+    "reported_cache_write_tokens": null,
+    "reported_reasoning_tokens": null,
+    "standard_tier_assumption_events": 1415,
+    "cost_per_independently_reviewed_success_usd": null,
+    "preflight_included": false,
+    "invoice_verified": false,
+    "limitations": [
+      "Standard-rate estimate, not the provider invoice; tier assumptions are recorded.",
+      "Jev, local GPU/CPU, SDK-internal retries and unreported calls are not priced.",
+      "Cached and cache-write tokens are subsets of input; reasoning tokens are already part of output."
+    ]
+  },
+  "catalog-rerun": {
+    "model": "gpt-5-nano",
+    "currency": "USD",
+    "as_of": "2026-10-16",
+    "price_source": "https://developers.openai.com/api/docs/models/gpt-5-nano",
+    "cache_accounting_source": "https://developers.openai.com/api/docs/guides/prompt-caching",
+    "pricing_sha256": "4c46b7540402074f2efb1b2328a0eb27e1d79a4a35d41469e85561b4f727470a",
+    "estimated_known_usage_subtotal_usd": 0.47178779,
+    "estimated_total_usd": null,
+    "sdk_calls_observed": 1424,
+    "priceable_returned_usage_events": 1424,
+    "unpriceable_or_missing_usage_events": 0,
+    "interrupted_cases_with_possible_unreported_calls": [
+      "VB1-MEM-136-en",
+      "VB1-PLAN-110-vi",
+      "VB1-PLAN-114-en",
+      "VB1-PLAN-147-en"
+    ],
+    "reported_input_tokens": 4698271,
+    "reported_output_tokens": 816984,
+    "reported_cached_input_tokens": 1998208,
+    "reported_cache_write_tokens": null,
+    "reported_reasoning_tokens": null,
+    "standard_tier_assumption_events": 1424,
+    "cost_per_independently_reviewed_success_usd": null,
+    "preflight_included": false,
+    "invoice_verified": false,
+    "limitations": [
+      "Standard-rate estimate, not the provider invoice; tier assumptions are recorded.",
+      "Jev, local GPU/CPU, SDK-internal retries and unreported calls are not priced.",
+      "Cached and cache-write tokens are subsets of input; reasoning tokens are already part of output."
+    ]
+  }
+}

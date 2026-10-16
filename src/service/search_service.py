@@ -16,7 +16,8 @@ from src.utils.utils import load_config
 
 from src.retrieval.image_retriever import ImageRetriever
 from src.retrieval.text_retriever import TextRetriever
-from src.retrieval.category_filters import checked_categories, explicit_photo_categories
+from src.retrieval.category_filters import checked_categories, photo_category_constraints
+from src.retrieval.image_filters import image_matches_filters, place_metadata
 from src.utils.progress import retrieval_progress
 from src.security.guardrails import validate_request, validate_threshold, bounded_int, MAX_LIMIT, MAX_GROUP_SIZE
 from src.security.images import load_safe_image
@@ -132,10 +133,15 @@ class SearchService:
         
         results = []
         offset = 0
+        images_by_identity = {(hit.place_id,hit.point_id):hit for hit in enriched} if source == 'image' else {}
 
         for group in groups:
-            evidence = enriched[offset:offset + len(group)]
+            evidence = ([images_by_identity[(hit.place_id,hit.point_id)] for hit in group
+                if hit.place_id == group[0].place_id and (hit.place_id,hit.point_id) in images_by_identity]
+                if source == 'image' else enriched[offset:offset + len(group)])
             offset += len(group)
+            if not evidence:
+                continue
             results.append(
                 SearchResult(
                     **asdict(evidence[0]),
@@ -269,6 +275,8 @@ class SearchService:
             image_reranking=ranking,
             maps_only=options.get("maps_only", False),
             location=options.get("location"), requested_categories=visual.requested_categories,
+            excluded_categories=visual.excluded_categories, requested_place_ids=visual.requested_place_ids,
+            excluded_place_ids=visual.excluded_place_ids,
             branch_status={branch: item.location_status or ("complete" if item.results else "no_results")
                            for branch, item in responses.items()},
             retrieval_warnings=[warning for item in responses.values() for warning in item.retrieval_warnings],
@@ -331,9 +339,12 @@ class SearchService:
         default_group_size = None if selected == "text" else self.config["retrieval_group_size"]
         group_size = group_size if group_size is not None else default_group_size
         location = location.strip() if location and location.strip() else None
-        categories = checked_categories(categories or explicit_photo_categories(query)) if selected != "text" else []
-        response = SearchResponse(route=selected, location=location, requested_categories=categories, maps_only=maps_only)
-        location_resolver = (self._location() if selected == "text" else self._image_location()) if location or categories else None
+        explicit_categories = bool(categories)
+        inferred, excluded = photo_category_constraints(query) if selected != 'text' else ([],[])
+        categories = checked_categories(categories or inferred) if selected != "text" else []
+        response = SearchResponse(route=selected, location=location, requested_categories=categories,
+            excluded_categories=excluded,maps_only=maps_only)
+        location_resolver = (self._location() if selected == "text" else self._image_location()) if location or categories or excluded else None
         scope = location_resolver.resolve(location) if location else None
         if location and scope is None:
             response.location_status = "unresolved"
@@ -350,11 +361,27 @@ class SearchService:
                 return None, lambda _: response
 
         allowed_places = scope.place_ids if scope else None
-        if categories:
-            allowed_places = location_resolver.category_place_ids(categories, allowed_places)
+        if selected != 'text' and not maps_only:
+            named, excluded_names, subject = self._image_location().named_place_constraints(query,location=location)
+            inferred, excluded = photo_category_constraints(subject)
+            categories = categories if explicit_categories else inferred
+            response.requested_categories, response.excluded_categories = categories,excluded
+            response.requested_place_ids = named
+            response.excluded_place_ids = excluded_names
+            if excluded_names:
+                allowed_places = sorted(set(allowed_places if allowed_places is not None else
+                    [place['place_id'] for place in self._image_location().places()])-set(excluded_names))
+            if named is not None:
+                allowed_places = sorted(set(named).intersection(allowed_places)) if allowed_places is not None else named
+                if not allowed_places:
+                    response.location_status = 'no_matching_place'
+                    response.retrieval_warnings.append('No indexed photo place matches the named subject within the requested location.')
+                    return None,lambda _:response
+        if categories or excluded:
+            allowed_places = self._image_location().category_place_ids(categories, allowed_places,excluded=excluded)
             if on_progress is not None:
                 on_progress({"step": "scope", "title": "Photo categories checked",
-                    "detail": f"Required categories: {', '.join(categories)}; {len(allowed_places)} eligible places before similarity ranking."})
+                    "detail": f"Required categories: {', '.join(categories)}; excluded: {', '.join(excluded)}; {len(allowed_places)} eligible places before similarity ranking."})
             if not allowed_places:
                 response.location_status = "no_matching_category"
                 return None, lambda _: response
@@ -381,6 +408,32 @@ class SearchService:
 
         def finish(groups):
             results = self._enrich_groups(groups or [], "text" if selected == "text" else "image", maps_only=maps_only)
+            if selected != 'text':
+                raw_count = sum(len(group) for group in groups or [])
+                filtered = []
+                for result in results:
+                    valid, seen_points = [],set()
+                    for hit in [result,*result.evidence]:
+                        key = (hit.place_id,hit.point_id)
+                        if key in seen_points:
+                            continue
+                        seen_points.add(key)
+                        if image_matches_filters(hit,categories=categories,excluded=excluded,
+                                place_ids=allowed_places,excluded_place_ids=response.excluded_place_ids,require_photo=not maps_only) and (
+                                not location or self._image_location().place_in_location(place_metadata(hit),location)):
+                            valid.append(hit)
+                    if not valid:
+                        continue
+                    from dataclasses import replace
+                    kept = replace(result,**{key:getattr(valid[0],key) for key in (
+                        'place_id','point_id','score','source','payload','entity_id','name','latitude','longitude',
+                        'url','category','province','address','image','metadata','missing_metadata')}, evidence=[])
+                    kept.evidence = [hit for hit in valid[1:] if hit.place_id == kept.place_id]
+                    if not any(hit.place_id == kept.place_id for hit in filtered):
+                        filtered.append(kept)
+                results = filtered
+                if raw_count and not results:
+                    response.retrieval_warnings.append('Photo candidates failed identity, category or location checks, or lacked a bound photo. No unrelated replacements were added.')
             if on_progress is not None:
                 on_progress({"step": "metadata", "title": "Retrieval metadata loaded",
                     "detail": ("Wikivoyage page and coordinate metadata." if selected == "text"

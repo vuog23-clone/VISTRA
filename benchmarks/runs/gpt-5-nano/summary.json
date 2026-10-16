@@ -1,0 +1,424 @@
+{
+  "model_configuration": "gpt-5-nano",
+  "generated_at": "2026-10-16T08:51:32.888168+00:00",
+  "original_catalog": {
+    "path": "first-run",
+    "protocol": "vistra-catalog-first-pass-v1",
+    "catalog_cases": 600,
+    "executed_cases": 408,
+    "unsupported_cases": 192,
+    "turn_errors": 10,
+    "by_track": {
+      "routing": {
+        "catalog": 100,
+        "executed": 100,
+        "unsupported": 0,
+        "turn_errors": 0
+      },
+      "retrieval": {
+        "catalog": 100,
+        "executed": 0,
+        "unsupported": 100,
+        "turn_errors": 0
+      },
+      "grounding": {
+        "catalog": 100,
+        "executed": 100,
+        "unsupported": 0,
+        "turn_errors": 0
+      },
+      "memory": {
+        "catalog": 100,
+        "executed": 98,
+        "unsupported": 2,
+        "turn_errors": 1
+      },
+      "planning": {
+        "catalog": 100,
+        "executed": 86,
+        "unsupported": 14,
+        "turn_errors": 4
+      },
+      "reliability": {
+        "catalog": 100,
+        "executed": 24,
+        "unsupported": 76,
+        "turn_errors": 5
+      }
+    },
+    "rerun_in_this_update": false,
+    "byte_for_byte_preserved": true
+  },
+  "retrieval_supplement": {
+    "path": "retrieval",
+    "protocol": "vistra-actual-index-retrieval-1",
+    "catalog_cases": 100,
+    "executed_cases": 100,
+    "case_errors": 0,
+    "llm_generation_used": false,
+    "original_retrieval_cases_replaced": false,
+    "by_kind": {
+      "category": {
+        "cases": 50,
+        "errors": 0,
+        "raw": {
+          "precision_at_20": 0.506,
+          "precision_of_returned_at_20": 0.506,
+          "recall_at_20": 0.4212254255126655,
+          "recall_at_20_ceiling": 0.592649329286051,
+          "ndcg_at_10": 0.6949948089667871,
+          "hit_at_5": 0.9791666666666666,
+          "reciprocal_rank_at_20": 0.8329861111111111
+        },
+        "final": {
+          "precision_at_20": 0.682,
+          "precision_of_returned_at_20": 0.96,
+          "recall_at_20": 0.592649329286051,
+          "recall_at_20_ceiling": 0.592649329286051,
+          "ndcg_at_10": 1.0,
+          "hit_at_5": 1.0,
+          "reciprocal_rank_at_20": 1.0
+        },
+        "zero_result_cases": 2,
+        "wrong_city_results": 0,
+        "wrong_category_results": 0,
+        "wrong_identity_results": 0
+      },
+      "known_place": {
+        "cases": 30,
+        "errors": 0,
+        "raw": {
+          "precision_at_20": 0.011666666666666667,
+          "precision_of_returned_at_20": 0.011666666666666667,
+          "recall_at_20": 0.23333333333333334,
+          "recall_at_20_ceiling": 1.0,
+          "ndcg_at_10": 0.12260337280315202,
+          "hit_at_5": 0.13333333333333333,
+          "reciprocal_rank_at_20": 0.10231481481481482
+        },
+        "final": {
+          "precision_at_20": 0.05,
+          "precision_of_returned_at_20": 1.0,
+          "recall_at_20": 1.0,
+          "recall_at_20_ceiling": 1.0,
+          "ndcg_at_10": 1.0,
+          "hit_at_5": 1.0,
+          "reciprocal_rank_at_20": 1.0
+        },
+        "zero_result_cases": 0,
+        "wrong_city_results": 0,
+        "wrong_category_results": 0,
+        "wrong_identity_results": 0
+      },
+      "guide_section": {
+        "cases": 20,
+        "errors": 0,
+        "raw": {
+          "precision_at_20": 0.135,
+          "precision_of_returned_at_20": 0.16910714285714284,
+          "recall_at_20": 1.0,
+          "recall_at_20_ceiling": 1.0,
+          "ndcg_at_10": 0.6970337379573213,
+          "hit_at_5": 1.0,
+          "reciprocal_rank_at_20": 0.6666666666666667
+        },
+        "final": {
+          "precision_at_20": 0.135,
+          "precision_of_returned_at_20": 0.16910714285714284,
+          "recall_at_20": 1.0,
+          "recall_at_20_ceiling": 1.0,
+          "ndcg_at_10": 0.6970337379573213,
+          "hit_at_5": 1.0,
+          "reciprocal_rank_at_20": 0.6666666666666667
+        },
+        "zero_result_cases": 0,
+        "wrong_city_results": 0,
+        "wrong_category_results": 0,
+        "wrong_identity_results": 0
+      }
+    },
+    "category_returned_results": 682,
+    "category_metadata_relevant_results": 682,
+    "correct_empty_cases": 2,
+    "guide_context_section_hit_cases": 16,
+    "guide_context_section_hit_denominator": 20,
+    "guide_context_misses": [
+      {
+        "case_id": "RI1-046-vi",
+        "query": "Tôi có thể di chuyển trong Đà Nẵng như thế nào?",
+        "language": "vi",
+        "city": "Da Nang"
+      },
+      {
+        "case_id": "RI1-045-vi",
+        "query": "Tôi có thể đến Đà Nẵng bằng phương tiện nào?",
+        "language": "vi",
+        "city": "Da Nang"
+      },
+      {
+        "case_id": "RI1-041-vi",
+        "query": "Tôi có thể đến Hà Nội bằng phương tiện nào?",
+        "language": "vi",
+        "city": "Hanoi"
+      },
+      {
+        "case_id": "RI1-043-en",
+        "query": "How can I travel to Ho Chi Minh City?",
+        "language": "en",
+        "city": "Ho Chi Minh City"
+      }
+    ],
+    "guide_context_by_language": {
+      "en": {
+        "hit": 9,
+        "cases": 10
+      },
+      "vi": {
+        "hit": 7,
+        "cases": 10
+      }
+    },
+    "card_wrong_city_count": 0,
+    "card_wrong_category_count": 0,
+    "photo_binding_violations": 0
+  },
+  "application_files_changed_since_original": [
+    "src/retrieval/category_filters.py"
+  ],
+  "application_source_changes": {
+    "src/retrieval/category_filters.py": {
+      "first_run_sha256": "d61c9109947e4c41b831c852f01116abaea6f353afd1f849c28750f4ddc7acef",
+      "retrieval_run_sha256": "ed484ab67659a02d24d8b76ae5970e8dfd6e8e138cbdd8fad77ab9810aadcc61"
+    }
+  },
+  "overall_accuracy_percent": null,
+  "original_catalog_coverage_recomputed_with_supplement": false,
+  "notes": [
+    "Two different protocols and case sets; results are presented side by side.",
+    "The original 100 fictional retrieval cases remain unsupported.",
+    "Retrieval labels judge metadata and guide sections, not photo pixels or complete answers.",
+    "The original catalog is a historical snapshot, not a fresh current-system rerun.",
+    "The current catalog rerun is reported separately from the preserved historical snapshot."
+  ],
+  "current_catalog": {
+    "path": "catalog-rerun",
+    "catalog_cases": 600,
+    "accounted_cases": 600,
+    "executed_cases": 408,
+    "unsupported_cases": 192,
+    "outcomes": {
+      "completed": 404,
+      "unsupported": 192,
+      "interrupted": 4
+    },
+    "planned_turns": 716,
+    "attempted_turns": 505,
+    "turn_errors": 8,
+    "cases_with_turn_errors": 8,
+    "turn_errors_by_type": {
+      "UnsafeInput": 8
+    },
+    "case_error_ids": [
+      "VB1-MEM-136-en",
+      "VB1-MEM-149-en",
+      "VB1-PLAN-110-vi",
+      "VB1-PLAN-114-en",
+      "VB1-PLAN-147-en",
+      "VB1-PLAN-149-en",
+      "VB1-PLAN-149-vi",
+      "VB1-FAIL-145-en",
+      "VB1-FAIL-145-vi",
+      "VB1-FAIL-146-en",
+      "VB1-FAIL-147-en",
+      "VB1-FAIL-147-vi"
+    ],
+    "automated_failure_ids": [
+      "VB1-MEM-103-en",
+      "VB1-MEM-104-en",
+      "VB1-MEM-104-vi",
+      "VB1-MEM-106-vi",
+      "VB1-MEM-110-vi",
+      "VB1-MEM-114-en",
+      "VB1-MEM-114-vi",
+      "VB1-MEM-117-en",
+      "VB1-MEM-117-vi",
+      "VB1-MEM-118-en",
+      "VB1-MEM-118-vi",
+      "VB1-MEM-127-en",
+      "VB1-MEM-127-vi",
+      "VB1-MEM-128-en",
+      "VB1-MEM-128-vi",
+      "VB1-MEM-133-vi",
+      "VB1-MEM-136-en",
+      "VB1-MEM-138-vi",
+      "VB1-MEM-146-vi",
+      "VB1-PLAN-105-vi",
+      "VB1-PLAN-110-vi",
+      "VB1-PLAN-111-en",
+      "VB1-PLAN-114-en",
+      "VB1-PLAN-137-en",
+      "VB1-PLAN-138-vi",
+      "VB1-PLAN-145-vi",
+      "VB1-PLAN-147-en",
+      "VB1-ROUTE-103-en",
+      "VB1-ROUTE-103-vi",
+      "VB1-ROUTE-104-en",
+      "VB1-ROUTE-104-vi",
+      "VB1-ROUTE-105-en",
+      "VB1-ROUTE-107-en",
+      "VB1-ROUTE-107-vi",
+      "VB1-ROUTE-108-vi",
+      "VB1-ROUTE-109-en",
+      "VB1-ROUTE-114-vi",
+      "VB1-ROUTE-120-en",
+      "VB1-ROUTE-120-vi",
+      "VB1-ROUTE-123-en",
+      "VB1-ROUTE-128-en",
+      "VB1-ROUTE-128-vi",
+      "VB1-ROUTE-129-en",
+      "VB1-ROUTE-129-vi",
+      "VB1-ROUTE-132-en",
+      "VB1-ROUTE-133-en",
+      "VB1-ROUTE-133-vi",
+      "VB1-ROUTE-136-vi",
+      "VB1-ROUTE-139-en",
+      "VB1-ROUTE-139-vi",
+      "VB1-ROUTE-140-en",
+      "VB1-ROUTE-142-en",
+      "VB1-ROUTE-144-vi",
+      "VB1-ROUTE-146-vi"
+    ],
+    "provider_calls": 1424,
+    "served_models": {
+      "gpt-5-nano-2025-08-07": 1424
+    },
+    "provider_usage": {
+      "input_tokens": 4698271,
+      "output_tokens": 816984,
+      "cached_input_tokens": 1998208
+    },
+    "calls_missing_usage": 0,
+    "worker_wall_timing": {
+      "count": 404,
+      "median_seconds": 15.129217049999852,
+      "p95_seconds": 51.28476810000029
+    },
+    "sdk_call_timing": {
+      "count": 1424,
+      "median_seconds": 3.7728337500001317,
+      "p95_seconds": 10.488643000000138
+    },
+    "checks_by_track": {
+      "grounding": {
+        "unscored": 400,
+        "pass": 78
+      },
+      "memory": {
+        "pass": 139,
+        "unscored": 456,
+        "fail": 21
+      },
+      "planning": {
+        "pass": 93,
+        "unscored": 315,
+        "fail": 10
+      },
+      "reliability": {
+        "unscored": 282,
+        "pass": 46
+      },
+      "retrieval": {
+        "unscored": 308
+      },
+      "routing": {
+        "pass": 382,
+        "unscored": 308,
+        "fail": 40
+      }
+    },
+    "checks_by_language": {
+      "en": {
+        "pass": 379,
+        "unscored": 1034,
+        "fail": 33
+      },
+      "vi": {
+        "pass": 359,
+        "unscored": 1035,
+        "fail": 38
+      }
+    },
+    "check_counts": {
+      "pass": 738,
+      "unscored": 2069,
+      "fail": 71
+    },
+    "semantic_reviews_pending": 1118,
+    "overall_task_success_percent": null,
+    "monetary_cost": null,
+    "cleanup_failures": []
+  },
+  "token_costs": {
+    "first-run": {
+      "model": "gpt-5-nano",
+      "currency": "USD",
+      "as_of": "2026-10-16",
+      "price_source": "https://developers.openai.com/api/docs/models/gpt-5-nano",
+      "cache_accounting_source": "https://developers.openai.com/api/docs/guides/prompt-caching",
+      "pricing_sha256": "4c46b7540402074f2efb1b2328a0eb27e1d79a4a35d41469e85561b4f727470a",
+      "estimated_known_usage_subtotal_usd": 0.46850339,
+      "estimated_total_usd": null,
+      "sdk_calls_observed": 1418,
+      "priceable_returned_usage_events": 1415,
+      "unpriceable_or_missing_usage_events": 3,
+      "interrupted_cases_with_possible_unreported_calls": [],
+      "reported_input_tokens": 4634135,
+      "reported_output_tokens": 810238,
+      "reported_cached_input_tokens": 1939968,
+      "reported_cache_write_tokens": null,
+      "reported_reasoning_tokens": null,
+      "standard_tier_assumption_events": 1415,
+      "cost_per_independently_reviewed_success_usd": null,
+      "preflight_included": false,
+      "invoice_verified": false,
+      "limitations": [
+        "Standard-rate estimate, not the provider invoice; tier assumptions are recorded.",
+        "Jev, local GPU/CPU, SDK-internal retries and unreported calls are not priced.",
+        "Cached and cache-write tokens are subsets of input; reasoning tokens are already part of output."
+      ]
+    },
+    "catalog-rerun": {
+      "model": "gpt-5-nano",
+      "currency": "USD",
+      "as_of": "2026-10-16",
+      "price_source": "https://developers.openai.com/api/docs/models/gpt-5-nano",
+      "cache_accounting_source": "https://developers.openai.com/api/docs/guides/prompt-caching",
+      "pricing_sha256": "4c46b7540402074f2efb1b2328a0eb27e1d79a4a35d41469e85561b4f727470a",
+      "estimated_known_usage_subtotal_usd": 0.47178779,
+      "estimated_total_usd": null,
+      "sdk_calls_observed": 1424,
+      "priceable_returned_usage_events": 1424,
+      "unpriceable_or_missing_usage_events": 0,
+      "interrupted_cases_with_possible_unreported_calls": [
+        "VB1-MEM-136-en",
+        "VB1-PLAN-110-vi",
+        "VB1-PLAN-114-en",
+        "VB1-PLAN-147-en"
+      ],
+      "reported_input_tokens": 4698271,
+      "reported_output_tokens": 816984,
+      "reported_cached_input_tokens": 1998208,
+      "reported_cache_write_tokens": null,
+      "reported_reasoning_tokens": null,
+      "standard_tier_assumption_events": 1424,
+      "cost_per_independently_reviewed_success_usd": null,
+      "preflight_included": false,
+      "invoice_verified": false,
+      "limitations": [
+        "Standard-rate estimate, not the provider invoice; tier assumptions are recorded.",
+        "Jev, local GPU/CPU, SDK-internal retries and unreported calls are not priced.",
+        "Cached and cache-write tokens are subsets of input; reasoning tokens are already part of output."
+      ]
+    }
+  }
+}

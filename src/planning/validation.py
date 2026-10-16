@@ -14,6 +14,29 @@ def minutes(value):
     return int(value[:2])*60 + int(value[3:]) if isinstance(value, str) and re.fullmatch(r'(?:[01]\d|2[0-3]):[0-5]\d|24:00', value) else None
 
 
+def choice_cost(record, request):
+    """Known party cost for one visit/night; missing units remain unknown."""
+    if record.cost is None or not record.currency or not record.cost_unit:
+        return None
+    multiplier = 1
+    if record.cost_unit == 'per_person':
+        multiplier = request.travelers
+    elif record.cost_unit == 'per_night':
+        multiplier = ceil(request.travelers / record.maximum_occupancy) if request.travelers and record.maximum_occupancy else None
+    return None if multiplier is None else record.cost * multiplier
+
+
+def dietary_conflict(record, request):
+    """Only structured dietary tags constrain every meal; other cuisines diversify."""
+    from src.service.weather_service import normalized
+    if record.cuisines is None:
+        return False
+    tags = {normalized(value).replace('-', ' ') for value in record.cuisines}
+    requested = {normalized(value).replace('-', ' ') for value in request.cuisines}
+    return any(not tags.intersection({'vegetarian', 'vegan'} if diet == 'vegetarian' else {diet})
+               for diet in requested.intersection({'vegetarian', 'vegan', 'halal', 'gluten free'}))
+
+
 def validate_itinerary(plan, request, notebook, *, previous=None, revision_day=None):
     plan = Itinerary.model_validate(plan)
     records, issues, seen = notebook.records(), [], set()
@@ -30,8 +53,8 @@ def validate_itinerary(plan, request, notebook, *, previous=None, revision_day=N
         issue('error', 'city_coverage', 'The itinerary omits a requested destination.')
     cuisines_unknown = False
     for day in plan.days:
-        restaurants_available = sum(record.kind == 'restaurant' and record.city == day.city for record in records.values())
-        attractions_available = sum(record.kind == 'attraction' and record.city == day.city for record in records.values())
+        restaurants_available = len({record.entity_id for record in records.values() if record.kind == 'restaurant' and record.city == day.city})
+        attractions_available = len({record.entity_id for record in records.values() if record.kind == 'attraction' and record.city == day.city})
         days_in_city = sum(item.city == day.city for item in plan.days)
         if LocationResolver._normalize(day.city) not in allowed_cities:
             issue('error', 'city', 'The scheduled city is outside the requested destinations.', day.day)
@@ -50,6 +73,8 @@ def validate_itinerary(plan, request, notebook, *, previous=None, revision_day=N
         if day.day < (request.duration_days or 0) and day.accommodation is None:
             unknown_cost = True
             issue('unknown', 'accommodation', 'Overnight accommodation is not supplied.', day.day)
+        if day.day == request.duration_days and day.accommodation is not None:
+            issue('error', 'accommodation', 'The final departure day has no overnight stay.', day.day)
         scheduled = []
         for kind, choice in day.choices():
             record = records.get(choice.evidence_id)
@@ -107,10 +132,17 @@ def validate_itinerary(plan, request, notebook, *, previous=None, revision_day=N
                             issue('error', 'opening_hours', 'A visit falls outside its saved opening hours.', day.day)
                     except (ValueError, TypeError):
                         issue('unknown', 'opening_hours', 'Saved opening hours cannot be interpreted.', day.day)
+            elif kind in ('restaurant', 'attraction'):
+                issue('unknown', 'opening_hours', 'An undated visit cannot be checked against weekday opening hours.', day.day)
             if kind == 'restaurant':
+                from src.retrieval.category_filters import metadata_photo_category
+                if metadata_photo_category({'category':record.category}) == 'cafe':
+                    issue('unknown','meal_suitability','Food service for a meal selected at a cafe is not confirmed by its category alone.',day.day)
+                if dietary_conflict(record, request):
+                    issue('error', 'cuisine', 'A selected restaurant lacks the requested dietary option in its supplied cuisine tags.', day.day)
                 if record.cuisines is None:
                     cuisines_unknown = True
-                known_cuisines.update(value.casefold() for value in record.cuisines or [])
+                known_cuisines.update(value.casefold().replace('-',' ') for value in record.cuisines or [])
             if kind == 'accommodation':
                 lodgings.setdefault(record.entity_id, []).append(day.day)
                 if request.room_type:
@@ -140,18 +172,11 @@ def validate_itinerary(plan, request, notebook, *, previous=None, revision_day=N
                     issue('unknown', 'transport_time', 'A selected connection has no verified duration.', day.day)
                 elif start is not None and end is not None and end-start < record.duration_minutes:
                     issue('error', 'transport_time', 'The allotted travel time is shorter than the route duration.', day.day)
-            if record.cost is None or not record.currency or not record.cost_unit:
+            cost = choice_cost(record, request)
+            if cost is None:
                 unknown_cost = True
             else:
-                multiplier = 1
-                if record.cost_unit == 'per_person':
-                    multiplier = request.travelers
-                elif record.cost_unit == 'per_night':
-                    multiplier = ceil(request.travelers / record.maximum_occupancy) if request.travelers and record.maximum_occupancy else None
-                if multiplier is None:
-                    unknown_cost = True
-                else:
-                    costs.append((record.currency, record.cost*multiplier))
+                costs.append((record.currency, cost))
         scheduled.sort()
         for before, after in zip(scheduled, scheduled[1:]):
             if before[1] > after[0]:
@@ -185,7 +210,9 @@ def validate_itinerary(plan, request, notebook, *, previous=None, revision_day=N
             if any(count < record.minimum_nights for count in runs):
                 issue('error', 'minimum_nights', 'A lodging stay violates its minimum consecutive nights.')
     for cuisine in request.cuisines:
-        if cuisine.casefold() not in known_cuisines:
+        tag = cuisine.casefold().replace('-',' ')
+        matches = {'vegetarian', 'vegan'} if tag == 'vegetarian' else {tag}
+        if not matches.intersection(known_cuisines):
             issue('unknown' if cuisines_unknown else 'error', 'cuisine', 'The requested cuisine is not confirmed by selected restaurants.')
     currencies = {currency for currency, _ in costs}
     currency = next(iter(currencies)) if len(currencies) == 1 else request.currency

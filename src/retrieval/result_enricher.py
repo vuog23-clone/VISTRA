@@ -3,6 +3,7 @@ from math import isfinite
 from pathlib import Path
 from typing import Iterable
 from urllib.parse import quote
+from uuid import UUID
 from src.retrieval.google_metadata_catalog import GoogleMetadataCatalog
 from src.data.google_payload import place_payload
 from src.data.preprocessing.google_maps_photos import checked_photo_url
@@ -57,20 +58,34 @@ class ResultEnricher:
     def enrich_image_results(self, results: Iterable[RetrievalResult]) -> list[EnrichedRetrievalResult]:
         results = list(results)
         self._validate_sources(results, {"image"})
+        valid = []
+        for result in results:
+            try:
+                UUID(str(result.point_id))
+            except (ValueError,TypeError):
+                continue
+            valid.append(result)
+        results = valid
         if not results:
             return []
         places, images = self.catalog.lookup(results)
         enriched = []
         for result in results:
             if result.payload.get("place_id") != result.place_id:
-                raise ValueError("Google photo payload belongs to a different place.")
+                continue
             place = places.get(result.place_id)
             image = images.get(str(result.point_id))
-            if image is not None and image["place_id"] != result.place_id:
-                raise ValueError("Google photo UUID belongs to a different PostgreSQL location.")
+            if not place or place.get('place_id') != result.place_id:
+                continue
+            if image is not None and (image.get('place_id') != result.place_id or
+                    str(image.get('image_id')) != str(result.point_id)):
+                continue
             latitude, longitude = self._coordinates(place or {})
             if image is not None:
-                checked_photo_url(image["image_url"])
+                try:
+                    checked_photo_url(image.get('image_url'))
+                except (ValueError,TypeError):
+                    continue
             missing = []
             if place is None:
                 missing.append("place")
@@ -99,7 +114,7 @@ class ResultEnricher:
         for result in results:
             place = place_payload(result.payload)
             if place.get("place_id") != result.place_id:
-                raise ValueError("Google photo payload belongs to a different place.")
+                continue
             latitude, longitude = ResultEnricher._coordinates(place.get("coordinates") or {}, place)
             missing = []
             if not place.get("place_name"):
