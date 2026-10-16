@@ -6,7 +6,12 @@ frontend/.runtime/
 
 # Local application interfaces (keep on disk, exclude from GitHub)
 /frontend/
-/api/
+/api/*
+!/api/__init__.py
+!/api/server.py
+!/api/runtime.py
+!/api/Dockerfile
+!/api/Dockerfile.dockerignore
 
 # Downloaded benchmark tool database
 /benchmarks/travelplanner/database/

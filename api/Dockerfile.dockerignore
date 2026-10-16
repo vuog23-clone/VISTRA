@@ -1,0 +1,14 @@
+# Only runtime source and the shared dependency manifest enter the build.
+**
+!requirements.txt
+!main.py
+!config.yaml
+!src/
+!src/**
+!api/
+!api/__init__.py
+!api/server.py
+!api/runtime.py
+**/__pycache__/**
+**/*.py[cod]
+**/*.log
